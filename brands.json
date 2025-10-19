@@ -1,0 +1,59 @@
+{
+    "vayes":{
+        "name": "Vayes",
+        "langs": ["Türkçe","İngilizce"]
+    },
+    "vayessaglikturizm":{
+        "name": "VayesSağlıkTurizmi",
+        "langs": ["Türkçe"]
+    },
+    "mobilappvayes":{
+        "name": "VayesMobilApp",
+        "langs": ["Türkçe","İngilizce"]
+    },
+    "newmedicaapp":{
+        "name": "NewMedicaApp",
+        "langs": ["Türkçe"]
+    },
+    "mobilly":{
+        "name": "Mobilly",
+        "langs": ["Türkçe"]
+    },
+    "labsvayes":{
+        "name": "VayesLabs",
+        "langs": ["Türkçe","İngilizce"]
+    },
+    "draycaatalay":{
+        "name": "DrAycaAtalay",
+        "langs": ["Türkçe"]
+    },
+    "meldaozekinci":{
+        "name": "MeldaÖzekinci",
+        "langs": ["Türkçe","İngilizce","Rusça"]
+    },
+    "ss-proje":{
+        "name": "SSProje",
+        "langs": ["Türkçe","İngilizce"]
+    },
+    "serdargursoy":{
+        "name": "SerdarGürsoy",
+        "langs": ["Türkçe","İngilizce"]
+    },
+    "bklogistics":{
+        "name": "BkLogistics",
+        "langs": ["Türkçe","İngilizce","Almanca"]
+    },
+    "imamoglu":{
+        "name": "İmamoglu",
+        "langs": ["Türkçe"]
+    },
+    "gunaysogutma":{
+        "name": "GünaySoğutma",
+        "langs": ["Türkçe","İngilizce","Arapça"]
+    },
+    "gucumpompa":{
+        "name": "GücümPompa",
+        "langs": ["Türkçe","İngilizce","Rusça"]
+    }
+    
+}

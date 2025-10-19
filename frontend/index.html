@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <title>TestApp</title>
+    <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial;
+        }
+
+        #butonBar{
+            display: flex;
+            max-width: 100%;
+            flex-wrap: wrap;
+            /* justify-content: center; */
+        }
+
+        /* Style tab links */
+        .tablink {
+            background-color: #555;
+            color: white;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            font-size: 17px;
+            min-width: 10%;
+        }
+
+        .tablink:hover {
+            background-color: #777;
+        }
+
+        /* Style the tab content (and add height:100% for full page content) */
+        .tabcontent {
+            display: none;
+            padding: 100px 20px;
+            height: 100%;
+        }
+
+        .contentBox{
+            width: 1000px; 
+            height: 200px; 
+            overflow-y: scroll; 
+            border:solid black 1px;
+        }
+
+        .metaDescBox{
+            width: 400px;
+            height:75px;
+            overflow-y: scroll;
+            border:solid black 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="butonBar">
+        <button class="tablink" onclick="openPage('Home')" id="defaultOpen">Home</button>
+        <!-- <button class="tablink" onclick="openPage('imamoglu')">İmamoğlu</button> -->
+    </div>
+
+    <div id="brandHub">
+        <div id="Home" class="tabcontent">
+            <h3>Home</h3>
+            <div>
+                <label>Marka adı:</label>
+                <input type="text" name="markaAdiGirdi">
+            </div>
+            <div>
+                <label>Diller(virgüllerle boşluk olmadan)</label>
+                <input type="text" name="dillerInp">
+            </div>
+            <button id="markaEkleyenButon">Ekle Markayı</button>
+
+            <div>
+                <label>Json ile ekle markayı</label>
+                <input type="file" id="markaEkleJsonInp" accept=".json">
+            </div>
+            <button id="markaJSONlaEkleyenButon">JSON ile ekle</button>
+        </div>
+        
+        <!-- <div id="imamoglu" class="tabcontent">
+            <h2>İmamın Oğlu Gelmiş</h2>
+            <label>Başlık</label>
+            <input type="text" id="imamogluBaslikInp"><br>
+            <button class="sendAI" marka="imamoglu" id="imamogluSendAI">AI'a Gönder</button><br>
+            <p id="imamogluonGoingProcess"></p>
+            <div id="imamogluturkce">
+                <h3>Türkçe</h3>
+                <div>
+                    <label>İçerik(HTML)</label>
+                    <div class="contentBox"></div>
+                    <label>Meta Desc</label>
+                    <div class="metaDescBox"></div>
+                </div>
+            </div>
+            
+            <div id="imamogluingilizce">
+                <h3>English</h3>
+                <div>
+                    <label>İçerik(HTML)</label>
+                    <div class="contentBox"></div>
+                    <label>Meta Desc</label>
+                    <div class="metaDescBox"></div>
+                </div>
+            </div>        
+        </div> -->
+
+    </div>
+        
+        
+        
+        
+    
+</body>
+
+
+<script>
+    function openPage(pageName) {
+        // Hide all elements with class="tabcontent" by default */
+        var i, tabcontent, tablinks;
+
+        tabcontent = document.getElementsByClassName("tabcontent");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+
+        // Show the specific tab content
+        document.getElementById(pageName).style.display = "block";
+    }
+
+    // Get the element with id="defaultOpen" and click on it
+    document.getElementById("defaultOpen").click(); 
+</script>
+
+
+<script type="module" src="/frontend/brandAdder.js"></script>
+<script type="module" src="/frontend/apiCall.js"></script>
+</html>
