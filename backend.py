@@ -8,14 +8,16 @@ from fastapi.staticfiles import StaticFiles
 from ollama import Client
 import subprocess
 from fastapi.middleware.cors import CORSMiddleware
+import sys
 
 try:
     with open("config.json", "r") as f:
         CONFIG = json.load(f)
 except FileNotFoundError:
-    CONFIG = {"installed_models": ["3b"]}
+    CONFIG = {"installed_models": ["7b"]}
 
 MODELS = {
+    "goat":"deepseek-v3.1:671b-cloud",
     "3b": "phi3:mini",
     "7b": "mistral:7b"
 }
@@ -79,121 +81,163 @@ app.mount("/frontend", StaticFiles(directory=FRONTEND_DIR), name="frontend")
 PROMPTS = {
     # Alt Başlıklar için Prompt
     "subtitlePrompt": """
-You are an expert in SEO and digital marketing since the birth of the web. I am planning content for the blog section of a website.
-Our topic: “{topic}”
-My goal is to generate original blog title ideas that are strong in terms of SEO, grab the reader’s attention, and are based on questions or topics.
-Generate exactly 6 titles and provide them in a single line, separated by commas. Do not add any other explanation, text, or extra information.
-The title formats can be: question, guide, list, comparison.
+You are an expert in SEO and digital marketing since the birth of the web.
+
+Topic: {topic}
+
+Task: Generate exactly 6 original blog titles that are SEO-friendly, attention-grabbing, and based on questions or topics. 
+Titles should match the style of the example provided and maintain a professional, technical tone suitable for industrial audiences. Allowed formats: question, guide, list, comparison.
+
+Output requirements:
+- Output the titles as a list (bullet points, dashes, or numbers are fine).
+- Output only the titles, nothing else.
 """,
 
     # İçerik Oluşturması için Prompt
 
     "contentPrompt":"""
-You are an expert in SEO and digital marketing since the inception of the web. I am a writer creating blog posts for a digital agency.
-For me, create a blog content with the topic "{subtitle}", minimum 300 words, in plain text, in HTML format.
-Rules:
+You are an expert in SEO and digital marketing since the beginning of the web.
 
-Do not include a concluding sentence or summary; end the text abruptly.
-Randomly colorize keywords in this format: <span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>
-Apply this colorization only to keywords.
-Do not mention any brand other than {brand}.
+Compose a professional, product-focused technical essay about "{subtitle}" for industrial engineers, product managers, and commercial decision-makers. The essay should be factual, commercial, and informative, emphasizing the benefits, features, and applications of {subtitle} in real-world industrial or environmental contexts.
 
-Provide the output only in HTML format.
+Write the essay in HTML, structuring all content in <p> tags. Naturally integrate 5–10 important technical keywords throughout the text and highlight each keyword using this format: <span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>. Use only <p>, <span>, and <strong> tags. Mention only "{brand}" — do not reference any other brands.
+
+Start immediately with technical content. Avoid any greetings, audience addresses, casual expressions, headings, lists, or conclusions. Ensure the essay flows naturally across paragraphs and totals approximately 300–400 words. Output **only the HTML content**, without explanations, notes, or markdown.
+
+Example structure (not content):
+<p>...</p>
+<p>...</p>
+<p>...</p>
     """,
     #Çeviri İçin Prompt
 
     "translationPrompt":"""
-You are a language translator specializing in web content and HTML format.
-I will provide you with an HTML content. Translate this HTML content into {lang} language and add dir="rtl" or dir="ltr" to each HTML tag, depending on the language's direction.
-Rules:
+You are a professional translator specialized in technical and commercial content. Translate the following HTML essay from English to {lang}. 
 
-Provide output only in HTML format, without additional explanations.
-Do not modify existing tags, only add the dir attribute.
-Translate the text into {lang} language, preserving the HTML structure.
-HTML content:
+Rules:
+- Translate only the text content inside the HTML tags. Do not modify, remove, or add any tags except for adding a direction attribute.
+- Add dir="rtl" to all tags if the target language is a right-to-left language (like Arabic, Hebrew), or dir="ltr" if the target language is left-to-right (like Turkish, French, German). Apply this attribute to every HTML tag (<p>, <span>, <strong>).
+- Keep all keyword highlights (<span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>) intact, translating the keyword text itself if applicable.
+- Maintain the original paragraph structure and formatting.
+- Do not add explanations, summaries, or extra text.
+- Output only the translated HTML content.
+
+Content to translate:
 {content}
 """,
 
     #Meta Description için prompt
 
     "metaDescPrompt":"""
-You are an expert in web content, SEO, and digital marketing.
-Given HTML content:
+You are an expert in SEO and digital marketing. Generate a **CTA-style meta description** summarizing the following HTML content. 
+
+Rules:
+- The meta description must be **strictly under 130 characters** for each language (count all letters, numbers, and punctuation).  
+- Summarize the HTML content faithfully, focusing on the product, features, benefits, and commercial aspects.  
+- Translate the meta description into the following languages **in order**, separated by |: {langs}.  
+- Output all translations in a single line, in the specified order, separated by |.  
+- Do not add explanations, numbering, or any extra text outside the translations.  
+
+HTML content to summarize:
 {content}
-For this HTML, create:
-
-A meta description containing target keywords
-Clear and unique for humans
-Including a call-to-action (CTA)
-Mobile-friendly
-Length under 130 characters
-
-Then translate this meta description into {langs} languages.
-Provide the output in a single line, separated by commas, without additional explanations.
 """
 }
 
+def generate_text(prompt: str, requested_model: str) -> str:
+            
+    preferred_model = "deepseek-v3.1:671b-cloud"
 
-def generate_text(prompt: str, model: str) -> str:
-    """Send a single prompt to Ollama and return the text response."""
-    print(f"\n[{model}] Running prompt:\n{prompt[:100]}...")
-    start = time.time()
-    response = client.generate(model=model, prompt=prompt)
-    elapsed = round(time.time() - start, 2)
-    print(f"Completed in {elapsed}s\n")
-    return response["response"].strip()
+    for model in [preferred_model, requested_model]:
+        try:
+            print(f"Model: {model}")
+            start = time.time()
+            response = client.chat(model=model, messages=[{"role": "user", "content": prompt}]).message.content
+            elapsed = round(time.time() - start, 2)
+            print(f"Completed in {elapsed}s\n")
+            return response.strip()
 
+        except Exception as e:
+            print(f"Model {model} failed ({e}), trying next...")
+    # Fallback output if both fail
+    return "THIS PROCESS FAILED"
 
 @app.post("/generate")
 def generate(
     brand: str = Body(..., embed=True),
     topic: str = Body(..., embed=True),
     langs: list = Body(..., embed=True),
-    ai_model: str = Body("7b", embed=True)
+    ai_model: str = Body(... , embed=True)
 ):
+
+    print("---- Incoming Request ----")
+    print(sys.stdout.encoding)
+    print(json.dumps({"brand": brand, "topic": topic, "langs": langs, "ai_model": ai_model}, indent=4))
+
     """Generate blog structure: subtitles + intro paragraphs."""
     if ai_model not in MODELS:
         return {"error": "Invalid model. Choose '3b' or '7b'."}
 
     model_name = MODELS[ai_model]
-    print(f"\nStarting generation for topic: '{topic}' with model: {model_name}")
+    
+    print(f"\nStarting generation for topic: '{topic}'")
 
     # Step 1: Generate subtitles
-    subtitle_prompt = PROMPTS["subtitlePrompt"].format(topic=topic)
-    subtitles_raw = generate_text(subtitle_prompt, model_name)
-    print(f"Subtitle Text {subtitles_raw}")
+    try:
+        subtitle_prompt = PROMPTS["subtitlePrompt"].format(topic=topic)
+        subtitles_response = generate_text(subtitle_prompt, model_name)
+        print(f"Subtitle Text {subtitles_response}")
 
-        # Clean and split subtitles
-    subtitles = [s.strip().strip(",") for s in subtitles_raw.split(",") if s.strip()]
+            # Clean and split subtitles
+        titles_raw = [line.strip() for line in subtitles_response.splitlines() if line.strip()]
+        subtitles =[]
+        for title in titles_raw:
+            subtitles.append(title.lstrip("-0123456789. "))
+    except Exception as e:
+        print(e)
 
-    print(f"Found {len(subtitles)} subtitles.")
-    for i, s in enumerate(subtitles, start=1):
+
+    print(f"\nFound {len(subtitles)} subtitles.\n")
+    subtitlesHTML = "<h3>Table of Contents</h3><ul>"
+    for i, s in enumerate(subtitles, start=0):
         print(f"{i}. {s}")
+        subtitlesHTML += f"<li>{subtitles[i]}</li>"
+    subtitlesHTML += "</ul>"
 
     # Step 2: Generate content for each subtitle
-    contents_subtitled = []
+    contents_subtitled = [subtitlesHTML]
     total = len(subtitles)
-    for idx, subtitle in enumerate(subtitles, start=1):
-        print(f"\n[{idx}/{total}] Generating content for subtitle: '{subtitle}'")
-        content_prompt = PROMPTS["contentPrompt"].format(subtitle=subtitle, brand=brand)
-        content_text = generate_text(content_prompt, model_name)
-        contents_subtitled.append(content_text)
+
+    try:
+        for idx, subtitle in enumerate(subtitles, start=1):
+            print(f"\n[{idx}/{total}] Generating content for subtitle: '{subtitle}'")
+            content_prompt = PROMPTS["contentPrompt"].format(subtitle=subtitle, brand=brand)
+            content_text = f"<h2>{subtitle}</h2>" + generate_text(content_prompt, model_name)
+            contents_subtitled.append(content_text)
+    except Exception as e:
+        print(e)
 
     print(f"\nGeneration complete for topic: '{topic}'")
+
     # Step 3: Translate to languages
     contents = {}
-    for lang in langs:
-        contents[lang] = ""
-        for content_w_subtitle in contents_subtitled:
-            translated_subtitled = generate_text(prompt=PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), model=model_name)
-            contents[lang] += translated_subtitled
+    try:
+        for lang in langs:
+            contents[lang] = ""
+            for content_w_subtitle in contents_subtitled:
+                translated_subtitled = generate_text(prompt=PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), requested_model=model_name)
+                contents[lang] += translated_subtitled
+    except Exception as e:
+        print(e)
 
     # Step 4: Meta Des
     metaDescs = {}
-    metaDescription_raw = generate_text(prompt=PROMPTS['metaDescPrompt'].format(content=contents['turkce'], langs=langs), model=model_name)
-    metaDescription = [desc.strip().strip(",") for desc in metaDescription_raw.split(",") if desc.strip()]
-    for i in range(len(langs)):
-        metaDescs[langs[i]] = metaDescription
+    try:
+        metaDescription_raw = generate_text(prompt=PROMPTS['metaDescPrompt'].format(content=contents['english'], langs=langs), requested_model=model_name)
+        metaDescription = [desc.strip().strip("|") for desc in metaDescription_raw.split("|") if desc.strip()]
+        for i in range(len(langs)):
+            metaDescs[langs[i]] = metaDescription[i]
+    except Exception as e:
+        print(e)
 
 
     return {

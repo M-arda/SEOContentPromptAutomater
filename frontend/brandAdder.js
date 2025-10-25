@@ -1,11 +1,11 @@
 // Dom elements declaration
 import * as API from "./apiCall.js";
+// console.log('API object at runtime:', API);
 const barOfButtons = document.querySelector('#butonBar');
 const tabHub = document.querySelector('#brandHub');
 const brandAdderBtn = document.querySelector('#markaEkleyenButon');
 const brandAdderwJSONBtn = document.querySelector('#markaJSONlaEkleyenButon');
 const brandAdderwJSONInp = document.querySelector('#markaEkleJsonInp');
-
 
 function deasciifierNLowerer(str) {
     const charMap = {
@@ -13,10 +13,12 @@ function deasciifierNLowerer(str) {
         'ğ': 'g', 'ü': 'u', 'ş': 's', 'ö': 'o', 'ç': 'c'
     };
 
-    return str.replace(/[\u00C0-\u017F]/g, function (ch) {
-        return charMap[ch] || ch;
-    }).toLowerCase();
+    return str
+        .replace(/[\u00C0-\u017F]/g, ch => charMap[ch] || ch)
+        .replace(/\s+/g, '') // remove all spaces (and tabs, newlines)
+        .toLowerCase();
 }
+
 
 function brandObjectifier() {
     let brandNameInp = document.querySelector('input[name="markaAdiGirdi"]');
@@ -98,7 +100,7 @@ function addBrand(brandObj) {
             <h3>${element}</h3>
             <div>
                 <label>İçerik(HTML)</label>
-                <div class="contentBox"></div>
+                <div class="contentBox"></div>  
                 <label>Meta Desc</label>
                 <div class="metaDescBox"></div>
             </div>
@@ -115,7 +117,7 @@ function addBrand(brandObj) {
     tabHub.insertAdjacentHTML('beforeend', brandBody)
 
     let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
-    sendAIBtn.addEventListener('click', () => API.generate(brandNameDeasciified));
+    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs, document.querySelector('input[name="aiModel"]:checked')?.value));
 }
 
 // EventListeners

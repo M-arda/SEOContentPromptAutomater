@@ -1,28 +1,25 @@
-export async function generate(brand, model) {
-    // Get the topic from the input field
-    const topic = document.querySelector(`#${brand}BaslikInp`).value;
+function deasciifierNLowerer(str) {
+        const charMap = {
+            'Ğ': 'g', 'Ü': 'u', 'Ş': 's', 'İ': 'i', 'Ö': 'o', 'Ç': 'c', 'ı': 'i',
+            'ğ': 'g', 'ü': 'u', 'ş': 's', 'ö': 'o', 'ç': 'c'
+        };
 
-    // Get all elements with IDs starting with the brand
-    const allSections = document.querySelectorAll(`[id^="${brand}"]`);
+        return str
+            .replace(/[\u00C0-\u017F]/g, ch => charMap[ch] || ch)
+            .replace(/\s+/g, '') // remove all spaces (and tabs, newlines)
+            .toLowerCase();
+    }
 
-    // Define valid languages (you can adjust this list based on your needs)
-    const validLanguages = ['turkce', 'ingilizce', "rusca", "arapca", "ispanyolca", "fransizca", "almanca"]; // Add more languages if needed
-
-    // Filter to get only language-specific sections
-    const langSections = Array.from(allSections).filter(section => {
-        const lang = section.id.replace(brand, '');
-        return validLanguages.includes(lang);
-    });
-
-    // Extract languages from the filtered sections
-    const langs = langSections.map(section => section.id.replace(brand, ''));
+export async function generate(brand, langs, model) {
+    let brandDeasciified = deasciifierNLowerer(brand)
+    const Inptopic = document.querySelector(`#${brandDeasciified}BaslikInp`).value;
 
     // Map content boxes for each language
     const contentBoxMap = {};
     const metaDescBoxMap = {};
     langs.forEach(lang => {
-        const contentBox = document.querySelector(`#${brand}${lang} .contentBox`);
-        const metaDescBox = document.querySelector(`#${brand}${lang} .metaDescBox`);
+        const contentBox = document.querySelector(`#${brandDeasciified}${lang} .contentBox`);
+        const metaDescBox = document.querySelector(`#${brandDeasciified}${lang} .metaDescBox`);
         if (contentBox) {
             contentBoxMap[lang] = contentBox;
         }
@@ -38,8 +35,8 @@ export async function generate(brand, model) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             brand: brand,
-            topic: topic,
-            model: model,
+            topic: Inptopic,
+            ai_model: model,
             langs: langs
         })
     });
@@ -49,12 +46,12 @@ export async function generate(brand, model) {
     console.log(data);
 
     // Update content boxes with the API response
-    // langs.forEach(lang => {
-    //     const contentBox = contentBoxMap[lang];
-    //     if (contentBox && data.introContent && data.introContent[lang]) {
-    //         contentBox.textContent = data.introContent[lang].content; // Assumes API returns content per language
-    //     }
-    // });
+    langs.forEach(lang => {
+        const contentBox = contentBoxMap[lang];
+        if (contentBox && data.content && data.content[lang]) {
+            contentBox.textContent = data.introContent[lang].content; // Assumes API returns content per language
+        }
+    });
 
     let contents = data.contents;
     let metaDescs = data.metaDescs;

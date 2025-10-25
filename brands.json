@@ -1,59 +1,58 @@
 {
     "vayes":{
         "name": "Vayes",
-        "langs": ["Türkçe","İngilizce"]
+        "langs": ["turkish","english"]
     },
     "vayessaglikturizm":{
-        "name": "VayesSağlıkTurizmi",
-        "langs": ["Türkçe"]
+        "name": "Vayes Sağlık Turizmi",
+        "langs": ["turkish"]
     },
     "mobilappvayes":{
-        "name": "VayesMobilApp",
-        "langs": ["Türkçe","İngilizce"]
+        "name": "Vayes Mobil App",
+        "langs": ["turkish","english"]
     },
     "newmedicaapp":{
         "name": "NewMedicaApp",
-        "langs": ["Türkçe"]
+        "langs": ["turkish"]
     },
     "mobilly":{
         "name": "Mobilly",
-        "langs": ["Türkçe"]
+        "langs": ["turkish"]
     },
     "labsvayes":{
-        "name": "VayesLabs",
-        "langs": ["Türkçe","İngilizce"]
+        "name": "Vayes Labs",
+        "langs": ["turkish","english"]
     },
     "draycaatalay":{
-        "name": "DrAycaAtalay",
-        "langs": ["Türkçe"]
+        "name": "Uzman Dermatolog Doktor Ayça Atalay",
+        "langs": ["turkish"]
     },
     "meldaozekinci":{
-        "name": "MeldaÖzekinci",
-        "langs": ["Türkçe","İngilizce","Rusça"]
+        "name": "Dermatoloji Uzmanı Doktor Melda Özekinci",
+        "langs": ["turkish","english","russian"]
     },
     "ss-proje":{
-        "name": "SSProje",
-        "langs": ["Türkçe","İngilizce"]
+        "name": "SS Proje",
+        "langs": ["turkish","english"]
     },
     "serdargursoy":{
-        "name": "SerdarGürsoy",
-        "langs": ["Türkçe","İngilizce"]
+        "name": "Serdar Gürsoy",
+        "langs": ["turkish","english"]
     },
     "bklogistics":{
-        "name": "BkLogistics",
-        "langs": ["Türkçe","İngilizce","Almanca"]
+        "name": "Bk Logistics",
+        "langs": ["turkish","english","german"]
     },
     "imamoglu":{
         "name": "İmamoglu",
-        "langs": ["Türkçe"]
+        "langs": ["turkish","english","arabic","russian","spanish","french"]
     },
     "gunaysogutma":{
-        "name": "GünaySoğutma",
-        "langs": ["Türkçe","İngilizce","Arapça"]
+        "name": "Günay Soğutma",
+        "langs": ["turkish","english","arabic"]
     },
     "gucumpompa":{
-        "name": "GücümPompa",
-        "langs": ["Türkçe","İngilizce","Rusça"]
-    }
-    
+        "name": "Gücüm Pompa",
+        "langs": ["turkish","english","russian"]
+    }    
 }
