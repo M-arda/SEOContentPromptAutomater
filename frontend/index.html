@@ -58,6 +58,12 @@
             overflow-y: scroll;
             border: solid black 1px;
         }
+        .metaKwBox {
+            width: 400px;
+            height: 75px;
+            overflow-y: scroll;
+            border: solid black 1px;
+        }
     </style>
 </head>
 
@@ -67,11 +73,7 @@
         <!-- <button class="tablink" onclick="openPage('imamoglu')">İmamoğlu</button> -->
     </div>
     <div id="radioHub">
-        <label for="aiModel">Select AI model for when 671b's limit reached</label><br>
-        <label for="aiModel">3b</label>
-        <input type="radio" value="3b" name="aiModel" id="aiModelInp3b"><br>
-        <label for="aiModel">7b</label>
-        <input type="radio" value="7b" name="aiModel" checked id="aiModelInp7b">
+        
         <!-- <input type="radio" name="aiModel" id="aiModelInp671b"> -->
     </div>
 
@@ -96,6 +98,8 @@
         </div>
 
         <!-- <div id="imamoglu" class="tabcontent">
+            <button></button>
+            <input type="text" id="imamogluArticleID">
             <h2>İmamın Oğlu Gelmiş</h2>
             <label>Başlık</label>
             <input type="text" id="imamogluBaslikInp"><br>
@@ -120,9 +124,9 @@
                     <div class="metaDescBox"></div>
                 </div>
             </div>        
-        </div> -->
+        </div>
 
-    </div>
+    </div> -->
 
 
 
@@ -151,7 +155,7 @@
 </script>
 
 
-<script type="module" src="/frontend/apiCall.js"></script>
 <script type="module" src="/frontend/brandAdder.js"></script>
+<script type="module" src="/frontend/apiCall.js"></script>
 
 </html>

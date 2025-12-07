@@ -2,7 +2,7 @@
 import * as API from "./apiCall.js";
 // console.log('API object at runtime:', API);
 const barOfButtons = document.querySelector('#butonBar');
-const tabHub = document.querySelector('#brandHub');
+const brandHub = document.querySelector('#brandHub');
 const brandAdderBtn = document.querySelector('#markaEkleyenButon');
 const brandAdderwJSONBtn = document.querySelector('#markaJSONlaEkleyenButon');
 const brandAdderwJSONInp = document.querySelector('#markaEkleJsonInp');
@@ -28,7 +28,7 @@ function brandObjectifier() {
     let brandObject = {
         "name": brandNameInp.value,
         "langs": []
-    }
+    }   
 
     brandLangs.forEach(element => {
         brandObject.langs.push(element);
@@ -87,6 +87,17 @@ function addBrand(brandObj) {
     let brandObject = JSON.parse(brandObj);
     let brandNameDeasciified = deasciifierNLowerer(brandObject.name);
 
+
+    let variablesForAPICall = {
+        services: brandObject.services,
+        audience: brandObject.audience,
+        brandKeywords: brandObject.keywords
+    }
+
+    window.brandAPIvars = window.brandAPIvars || {};
+    window.brandAPIvars[brandNameDeasciified] = variablesForAPICall;
+
+
     let brandBtn = document.createElement('button');
     brandBtn.classList.add('tablink');
     brandBtn.addEventListener('click', () => openPage(brandNameDeasciified));
@@ -100,9 +111,14 @@ function addBrand(brandObj) {
             <h3>${element}</h3>
             <div>
                 <label>İçerik(HTML)</label>
-                <div class="contentBox"></div>  
+                <div class="contentBox"></div>
+                <button class="copyBtn" data-box="contentBox">Copy</button><br/>
                 <label>Meta Desc</label>
                 <div class="metaDescBox"></div>
+                <button class="copyBtn" data-box="metaDescBox">Copy</button><br/>
+                <label>Meta Keywords</label>
+                <div class="metaKwBox" class="metaKwBox"></div>
+                <button class="copyBtn" data-box="metaKwBox">Copy</button><br/>
             </div>
         </div>`
     });
@@ -112,12 +128,32 @@ function addBrand(brandObj) {
         <label>Başlık</label>
         <input type="text" id="${brandNameDeasciified}BaslikInp"><br>
         <button class="sendAI" marka="${brandNameDeasciified}" id="${brandNameDeasciified}SendAI">AI'a Gönder</button><br>
-        <p id="${brandNameDeasciified}onGoingProcess"></p>${brandBodyLangs}</div>`
+        <p id="${brandNameDeasciified}onGoingProcess">Waiting</p>${brandBodyLangs}</div>`
 
-    tabHub.insertAdjacentHTML('beforeend', brandBody)
+
+    brandHub.insertAdjacentHTML('beforeend', brandBody)
+
+    brandHub.addEventListener('click', (e) => {
+        if (e.target.classList.contains('copyBtn')) {
+            const box = e.target.previousElementSibling;  // Grabs the <div class="...Box">
+            if (box && box.textContent) {
+                navigator.clipboard.writeText(box.textContent.trim()).then(() => {
+                    // Quick UX: Flash "Copied!" on button for 1s
+                    const btn = e.target;
+                    const origText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    btn.style.background = '#4CAF50';
+                    setTimeout(() => {
+                        btn.textContent = origText;
+                        btn.style.background = '';  // Reset
+                    }, 1000);
+                }).catch(err => console.error('Clipboard fail:', err));  // User denied perms?
+            }
+        }
+    });
 
     let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
-    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs, document.querySelector('input[name="aiModel"]:checked')?.value));
+    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs));
 }
 
 // EventListeners
