@@ -14,6 +14,9 @@ import sys
 from OllamaAccountSwitchTest import get_next_account
 from OllamaAccountSwitchTest import get_account_count
 from uuid import uuid4
+from bs4 import BeautifulSoup
+from deep_translator import GoogleTranslator
+import re
 
 try:
     with open("config.json", "r") as f:
@@ -105,81 +108,57 @@ app.mount("/sounds", StaticFiles(directory=SOUNDS_DIR), name="sounds")
 PROMPTS = {
     # Alt Başlıklar için Prompt
     "subtitlePrompt": """
-You are a senior B2B conversion copywriter specializing in industrial and technical SaaS/products for over 20 years.
-Write everything in perfect English only.
+You are an expert in SEO, digital marketing, and content optimization since the dawn of the internet, with a deep understanding of transactional strategies to drive conversions, leads, and sales.
 
 Topic: {topic}
-Brand name: {brand_name}
-Target audience: {brand_audience}
 
-Task:
-Generate exactly 10 professional, benefit-driven subheadings for a blog post.
+Brand Info:
+    Brand Name: {brand_name}
+    Brand Description: {brand_description}
+    Target Audience: {brand_audience}
 
-Every subheading MUST:
-- Be 100 percent English
-- Contain {brand_name} at least once
-- Explicitly reference the core subject of {topic}
-- Stay under 20 words
-- Focus on measurable results or solved pain points
-- Maintain a serious, technical decision–maker tone
+Task:  
+Generate exactly 10 original, SEO-optimized, and highly transactional blog titles.  
+Every title must keep the main focus on the {topic} itself (not on the brand.  
+The brand ({brand_name}) and its offerings may only appear as a supporting element that adds credibility, proof, or solution (never as the primary subject).  
+Allowed formats only: question, guide/how-to, listicle, or comparison.  
+Each title must contain strong commercial/transactional intent (ROI, cost savings, efficiency, compliance, scalability, speed, risk reduction, etc.).
 
-Allowed formats (use any):
-1. How {brand_name} [Achieves Specific Result]
-2. Why [Audience/Industry] Switch to {brand_name} in 2025
-3. [Number] Ways {brand_name} Reduces [Cost/Risk/Downtime]
-4. The Real Cost of [Old Method] vs {brand_name}
-5. What Most Companies Get Wrong About [Topic] – And How {brand_name} Fixes It
-6. [Number] Key Features That Set {brand_name} Apart
-7. How {brand_name} Delivers [X] Percent Better [Metric] Than Competitors
-8. The Hidden Risks of [Common Practice] and {brand_name}’s Solution
-9. How {brand_name} Helps [Audience] Comply with [Regulation/Standard]
-10. Why Legacy [Tool/System] Fails and {brand_name} Succeeds
-11. [Number] Proven Strategies Using {brand_name} to Increase [Metric]
-12. How Integrating {brand_name} Streamlines [Specific Process]
+Tone: professional, technical, authoritativeideal for industrial B2B decision-makers.
 
-Output exactly this — nothing else:
-1. First subheading
-2. Second subheading
-...
-10. Tenth subheading
+Output requirements:
+- Output only the 10 titles as a numbered list (1. to 10.).
+- Absolutely no introductions, explanations, disclaimers, or any other text.
 """,
 
     # İçerik Oluşturması için Prompt
 
     "contentPrompt":"""
-You are a senior technical SEO copywriter who writes exclusively in perfect English for international B2B and industrial audiences.
+You are an expert in SEO, digital marketing, and content optimization since the dawn of the internet, with a deep understanding of transactional strategies to drive conversions, leads, and sales.
 
-Topic / subtitle: {subtitle}
+Topic / Subtitle: {subtitle}
 
-Brand name – write EXACTLY as given below and NEVER translate it: {brand_name}
+Brand Info (provide exactly as below, one per line):
+Brand Name: {brand_name}
+Brand Description: {brand_description}
+Target Audience: {brand_audience}
+Topic's Keywords: {content_keywords} 
 
-
-Content-specific keywords (all already in English – use only these, repeat 6–12 times total):
-{content_keywords}
-
-Target audience: {brand_audience}
-
-LANGUAGE LOCK – THIS OVERRIDES EVERYTHING ELSE:
-- The ONLY NON-ENGLISH text that is allowed is the exact brand name {brand_name} itself.
-- EVERY SINGLE OTHER WORD YOU WRITE MUST BE ENGLISH.
-- If any Turkish word tries to enter your output, DELETE IT IMMEDIATELY and replace with the correct English term.
-- Zero exceptions, zero tolerance.
 
 Task:
-Write a 200–300 word technical essay about {subtitle}.
+Compose a professional, technical essay focused primarily on the {subtitle}, emphasizing its benefits, features, and real-world applications in industrial or environmental contexts. Infuse strong transactional intent.
+
+Mention {brand_name} only as a supporting element for credibility, examples, or proven solutions (never as the main subject). Naturally integrate 5–10 important technical keywords throughout and highlight each using: <span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>.
+
+Write in HTML, structuring all content in <p> tags. Use ONLY <p>, <span>, and <strong> tags.
 
 Strict rules:
-- 200–300 words exactly
-- Use {brand_name} and all brand-specific keywords heavily and naturally (never highlight them)
-- Highlight 12–18 important technical terms / processes / benefits with:
-  <span class="Renk--Metin-ANTRASIT"><strong>term or phrase</strong></span>
-  (never the brand name)
+- Approximately 200–300 words
 - Start instantly with technical content
-- No headings, lists, bullets, conclusions, greetings, CTAs
-- ONLY allowed tags: <p> and <span class="Renk--Metin-ANTRASIT"><strong>...</strong></span>
-- Professional, factual, slightly commercial tone
+- No greetings, audience addresses, casual expressions, headings, lists, bullets, conclusions
+- Factual, commercial, informative tone with a professional flow across paragraphs
 
-Output EXACTLY this and nothing else:
+Output EXACTLY the HTML content and nothing else:
 <p>First paragraph...</p>
 <p>Second paragraph...</p>
 <p>Third paragraph...</p>
@@ -189,16 +168,17 @@ No extra text, no word count, no notes.
     #Çeviri İçin Prompt
 
     "translationPrompt":"""
-You are a professional translator specialized in technical and commercial content. Translate the following HTML essay from English to {lang}.
+You are a professional translator specialized in technical and commercial content. Your task is to translate the following HTML essay from English to {lang}, where {lang} is the target language name (e.g., Arabic, Hebrew, Turkish, French, German).
 
-Rules:
-- Translate only the visible text content inside HTML tags. Skip code, URLs, entities (&amp; etc.), dates, numbers, and proper nouns unless they need natural adaptation for the target language.
-- Do not modify, remove, or add any tags or attributes except for adding a dir attribute to every relevant tag (see below).
-- For direction: If {lang} is right-to-left (RTL: Arabic, Hebrew, Persian, Urdu, etc.), add dir="rtl" to every HTML tag containing text, such as <p>, <span>, <strong>. If left-to-right (LTR: most others, like French, German, Turkish, Spanish), add dir="ltr" to the same tags. Do this for all instances in the content.
-- Keep all keyword highlights intact: <span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>. Translate the keyword text only if it's not a technical term, brand, or proper noun (e.g., translate "machine learning" to the equivalent, but leave "TensorFlow" as-is).
-- Maintain the original paragraph structure, formatting, and all other attributes/classes.
-- Do not add explanations, summaries, or extra text of any kind.
-- Output only the fully translated HTML content, nothing else.
+Strict Rules:
+- Translate ONLY the text content inside HTML tags. Do NOT modify, remove, add, or rearrange any HTML tags, attributes, or structure except for the specified direction attribute.
+- Automatically detect if the target language is right-to-left (RTL) like Arabic or Hebrew, and add dir="rtl" to EVERY relevant HTML tag that contains text (e.g., <p>, <span>, <strong>, <div>, <h1-6>, <li>, etc.). For left-to-right (LTR) languages like Turkish, French, or German, add dir="ltr" instead. If unsure about a language's direction, default to LTR and note it in your internal thinking (but not in output).
+- Preserve all keyword highlights exactly as they are, such as <span class="Renk--Metin-ANTRASIT"><strong>keyword</strong></span>. Translate the keyword text inside if it's translatable content, but keep the surrounding tags and classes unchanged.
+- Maintain the exact original paragraph structure, line breaks, and formatting. Do not merge or split elements.
+- Handle special characters, entities (e.g., &amp;), and code snippets accurately without alteration.
+- Do NOT add any explanations, summaries, introductions, conclusions, or extra text outside the HTML. Output MUST be pure HTML starting with the root tag (e.g., <html> or <body> if that's the structure) and nothing else—no wrappers, no markdown, no comments.
+- If the content includes non-translatable elements like URLs, code, or proper names, leave them unchanged.
+- Edge cases: If {lang} is not a valid language or unclear, stop and output "Invalid target language specified." But assume it's valid here.
 
 Content to translate:
 {content}
@@ -207,51 +187,110 @@ Content to translate:
     #Meta Description için prompt
 
     "metaDescPrompt":"""
-You are an expert in SEO and digital marketing. Generate a CTA-style meta description (action-oriented summary that hooks users to click, e.g., "Discover X's features and boost your Y—start free today!") summarizing the following HTML content, tailored to {brand_keywords}, {brand_audience}, and {brand_services}.
+You are an expert in SEO and digital marketing. Your task is to generate CTA-style meta descriptions (action-oriented summaries that hook users to click, e.g., "Discover X's features and boost your Y—start free today!") summarizing the provided HTML content, tailored to {brand_keywords}, {brand_audience}, and {brand_services}.
 
-Rules:
-- Extract only the visible text from the HTML (ignore tags, attributes, scripts, and non-text elements).
-- For each language, the meta description must be strictly under 130 characters (count all letters, numbers, punctuation, and spaces; verify the count yourself before finalizing).
-- Summarize faithfully, emphasizing {brand_keywords} from the product, key features and benefits for {brand_audience}, and commercial hooks like {brand_services}, pricing, or trials.
-- Translate into the languages in {langs} (format: comma-separated list, e.g., "es,fr,de"), generating one description per language in that exact order.
-- Output all descriptions in a single line, separated by | (e.g., "Desc in es|Desc in fr|Desc in de"). No labels, numbering, or extra text.
-- Do not add explanations or anything outside the single line.
+Strict Rules:
+- Extract ONLY the visible text from the HTML by parsing and concatenating all text nodes (e.g., content inside <p>, <h1>, <span>, etc.), ignoring tags, attributes, scripts, styles, comments, and non-text elements like images or empty nodes. Treat the extracted text as a cohesive summary source.
+- For each language, ensure the meta description is strictly under 130 characters (count every letter, number, punctuation, space, and special character precisely; verify the count internally before finalizing—aim for 100-120 chars for safety).
+- Summarize faithfully: Emphasize {content_keywords} from the product, highlight key features and benefits targeted at {brand_audience}, and include commercial hooks like {brand_services}, pricing details, free trials, or urgency calls-to-action to encourage clicks.
+- Make each description engaging, persuasive, and SEO-optimized with natural inclusion of {content_keywords} where relevant, ending with a strong CTA verb (e.g., "Try now!", "Sign up free!").
+- Translate into the exact languages listed in {langs} (a comma-separated list, e.g., "es,fr,de" for Spanish, French, German). Generate one description per language in the precise order provided in {langs}.
+- Output ALL descriptions in a SINGLE line, separated by | (e.g., "Desc in es|Desc in fr|Desc in de"). Include NO labels, numbering, explanations, introductions, conclusions, or any extra text—pure output only.
+- Handle special cases: If {langs} is empty or invalid, output "No languages specified." If the extracted text is too short or irrelevant, create a generic CTA based on brand placeholders, but prioritize fidelity to content.
+- Do NOT add any metadata, character counts, or comments in the output.
 
 HTML content to summarize:
 {content}
 """,
     # Meta Keywords için Prompt
     "metaKeywordPrompt":"""
-    You are an expert in SEO and digital marketing. Generate a meta keywords list summarizing the {topic}, optimized for {brand_keywords}, {brand_audience}, and highlighting {brand_services}.
+    You are an expert in SEO and digital marketing. Generate a concise, high-impact meta keywords list summarizing the {topic}, optimized for {brand_keywords}, targeted at {brand_audience}, and highlighting {brand_services}.
 
-Rules:
-- Extract and blend key terms from {topic}, weaving in {brand_keywords} naturally for search relevance.
-- Focus on 5-10 high-impact keywords or phrases per language: Mix core terms, long-tails for {brand_audience} benefits, and action-oriented ones tied to {brand_services} (e.g., "AI automation, CRM consulting").
-- Keep each list concise: Under 200 characters total (count commas, spaces; verify yourself).
-- Generate one list per language in {langs} (comma-separated, e.g., "es,fr,de"), in that exact order.
-- Format each as a comma-separated string (no quotes around terms, e.g., "kw1,kw2,kw3").
-- Output all lists in a single line, with languages separated by | and keywords within each language separated by commas (e.g., "kw1,kw2,kw3|kw1,kw2|kw1,kw2,kw3"). No labels, numbering, or extra text.
-- Do not add explanations or anything outside the single line.
+Strict Rules:
+- Extract the most relevant terms directly from {topic}, then naturally blend in {brand_keywords} and {brand_services} for maximum search relevance.
+- Produce exactly 5–10 powerful keywords/phrases per language: include a mix of head terms, long-tail phrases focused on {brand_audience} pain points/benefits, and action-oriented terms tied to {brand_services} (e.g., "AI workflow automation", "CRM implementation services").
+- Keep each language’s list under 200 characters total (count every letter, comma, and space; verify the exact count internally before finalizing—target 120-180 chars for safety).
+- Generate one list per language specified in {langs}, strictly in the order given.
+- Format each list as a plain comma-separated string with NO quotes, brackets, or extra punctuation (e.g., "automatización IA,consultoría CRM,flujos de trabajo inteligentes").
+- Output everything on a SINGLE line: language lists separated only by | (e.g., "kw1,kw2,kw3|kw1,kw2,kw3,kw4|kw1,kw2"). Absolutely NO labels, language codes, numbering, explanations, line breaks, or any other text.
+- If {langs} is missing or empty, output "No languages specified." Otherwise assume the list is valid.
 
 Topic details:
 {topic}
 """
 }
 
+
+def translate_html(html_input, target_lang):
+    """
+    Swaps highlights to **bold** marker, translates full marked text in context, extracts translated bold,
+    wraps it back in tags. Targets p/h2/h3/li, preserves structure/ul.
+    """
+    # Lang map: full name -> ISO code
+    lang_map = {
+        'turkish': 'tr',
+        'english': 'en',
+        'arabic': 'ar',
+        'russian': 'ru',
+        'french': 'fr',
+        'spanish': 'es',
+        'german': 'de'
+    }
+    
+    # Normalize to code if full name
+    if target_lang.lower() in lang_map:
+        target_lang = lang_map[target_lang.lower()]
+    
+    translator = GoogleTranslator(source='en', target=target_lang)
+    soup = BeautifulSoup(html_input, 'html.parser')
+    
+    # Target elements: p, h2, h3, li (ul skipped as wrapper)
+    for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
+        has_marker = False
+    # Swap span to **bold** marker
+    span = elem.find('span', class_='Renk--Metin-ANTRASIT')
+    if span and span.strong:
+        bold_text = span.strong.get_text(strip=True)
+        span.replace_with(f'**{bold_text}**')
+        has_marker = True
+    
+    # Grab full marked text (or plain)
+    full_text = elem.get_text(separator=' ', strip=True)
+    
+    # Always translate full (context for all)
+    full_translated = translator.translate(full_text)
+    
+    final_text = full_translated
+    if has_marker:
+        # Extract translated bold from between **
+        bold_match = re.search(r'\*\*(.*?)\*\*', full_translated)
+        if bold_match:
+            translated_bold = bold_match.group(1).strip()
+            def replace_bold(match):
+                return f' <span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span> '
+            final_text = re.sub(r'\*\*(.*?)\*\*', replace_bold, full_translated)
+    
+    # Nuke and insert
+    elem.clear()
+    elem.append(final_text)
+    
+    return str(soup).replace('&lt;','<').replace('&gt;','>')
+    
+
 # client = get_client()
 def generate_text(prompt: str, requested_model: str) -> str:
     global client
 
-    print("generating")
+    # print("generating")
     model_priority = [
-        MODELS["derin"],
-        MODELS["derin"],
         MODELS["qwen"],
         MODELS["gpt"],
         MODELS["derin"],
-        requested_model,
         MODELS["qwen"],
-        MODELS["gpt"]
+        MODELS["derin"],
+        MODELS["gpt"],
+        MODELS["derin"],
+        requested_model,
     ]
 
     idx = 0
@@ -289,14 +328,14 @@ def generate_text(prompt: str, requested_model: str) -> str:
 
     return "|   THIS PROCESS FAILED    |"
 
-async def run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name):
+def run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description):
 
     try:
         # Subtitles
         subtitles = []
         update_job(job_id, 'generating', 1, 'Generating subtitles...')
         subtitle_prompt = PROMPTS["subtitlePrompt"].format(
-            topic=topic, brand_name=brand, brand_audience=audience)
+            topic=topic, brand_name=brand, brand_audience=audience, brand_description=description)
         subtitles_response = generate_text(subtitle_prompt, model_name)
         print(f"Subtitle Text {subtitles_response}")
 
@@ -313,6 +352,7 @@ async def run_generation(job_id, brand, topic, langs, ai_model, services, audien
         subtitlesHTML = "<h3>Table of Contents</h3><ul>"
         for i, s in enumerate(subtitles):
             print(f"{i}. {s}")
+            subtitlesHTML = subtitlesHTML.replace('%',' percent')
             subtitlesHTML += f"<li>{subtitles[i]}</li>"
         subtitlesHTML += "</ul>"
 
@@ -340,12 +380,13 @@ async def run_generation(job_id, brand, topic, langs, ai_model, services, audien
             print(f"\n[{idx}/{total}] Generating content for subtitle: '{subtitle}'")
             content_prompt = PROMPTS["contentPrompt"].format(
                 subtitle=subtitle, brand_name=brand,
-                content_keywords=metaKeywords.get("english", []), brand_audience=audience
+                content_keywords=metaKeywords.get("english", []), brand_audience=audience, brand_description=description
             )
-            content_text = f"<h2>{subtitle}</h2>" + generate_text(content_prompt, model_name)
+            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name)
+            content_text = content_text.replace('%',' percent')
             contents_subtitled.append(content_text)
             sub_step = f'3.{idx}'
-            update_job(job_id, 'generating', float(sub_step), f"{idx}/{total} Content '{subtitle}' running.")
+            update_job(job_id, 'generating', float(sub_step), f"{idx}/{total} Content '{subtitle}' finished.")
         update_job(job_id, 'running', 3, "All content generated.")
         print(f"\nGeneration complete for topic: '{topic}'")
 
@@ -355,13 +396,19 @@ async def run_generation(job_id, brand, topic, langs, ai_model, services, audien
         if "english" not in langs:
             contents["english"] = "".join(contents_subtitled)
         for lang in langs:
-            contents[lang] = ""
-            for content_w_subtitle in contents_subtitled:
-                translated_subtitled = generate_text(
-                    PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
-                    model_name
-                )
-                contents[lang] += translated_subtitled
+            if lang == "english":
+                contents["english"] = ""
+                for content_w_subtitle in contents_subtitled:
+                    contents["english"] += content_w_subtitle
+            else:
+                contents[lang] = ""
+                for content_w_subtitle in contents_subtitled:
+                    # translated_subtitled = generate_text(
+                    #     PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
+                    #     model_name
+                    # )
+                    translated_subtitled = translate_html(content_w_subtitle, target_lang=lang)
+                    contents[lang] += translated_subtitled
         update_job(job_id, 'running', 4, "Translations complete.")
 
         # Meta Descs
@@ -370,7 +417,7 @@ async def run_generation(job_id, brand, topic, langs, ai_model, services, audien
         metaDescription_raw = generate_text(
             PROMPTS['metaDescPrompt'].format(
                 content=contents.get('english', ''), brand_keywords=brandKeywords, 
-                brand_audience=audience, brand_services=services, langs=",".join(langs)
+                brand_audience=audience, content_keywords=metaKeywords.get("english", []), brand_services=services, langs=",".join(langs)
             ), 
             model_name
         )
@@ -387,6 +434,13 @@ async def run_generation(job_id, brand, topic, langs, ai_model, services, audien
             "metaKeywords": metaKeywords
         }
         update_job(job_id, 'done', 5, "Full results ready.", final_data)
+
+        # return {
+        #     "subtitles": subtitles,
+        #     "contents": contents,
+        #     "metaDescs": metaDescs,
+        #     "metaKeywords": metaKeywords
+        # }
     except Exception as e:
         print(f"Background generation bombed: {e}")
         update_job(job_id, 'error', 0, f"Gen failed: {e}")
@@ -400,6 +454,7 @@ def generate(
     services: str = Body(..., embed=True),
     audience: str = Body(..., embed=True),
     brandKeywords: str = Body(..., embed=True),
+    description: str = Body(...,embed=True),
     background_tasks: BackgroundTasks = None
 ):
     job_id = str(uuid4())
@@ -411,16 +466,23 @@ def generate(
     model_name = MODELS["derin"]
     print(f"\nStarting generation for topic: '{topic}'")
 
-    background_tasks.add_task(run_generation, job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name)
-    
+    background_tasks.add_task(run_generation, job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description)
+    # return run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description)
     return JSONResponse({"job_id": job_id, "status": "started", "message": "Job queued—polling for updates."})
 
 @app.get("/progress/{job_id}")
 def get_progress(job_id: str):
-    if job_id not in jobs:
-        return JSONResponse({"error": "Job not found"}, status_code=404)
-    job = jobs[job_id]
+    job = jobs.get(job_id)
+    if not job:
+        # 404 yerine 200 dön + status: "pending" veya "not_started"
+        return {
+            "status": "pending",
+            "step": 0,
+            "message": "Job queued — warming up...",
+            "data": None
+        }
     return job
+
 
 @app.get("/sounds")
 def list_sounds():
@@ -437,11 +499,25 @@ def serve_index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 
+
 if __name__ == "__main__":
     import uvicorn
+    import webbrowser
+    import threading
+    import time
 
     url = "http://127.0.0.1:3169"
     print(f"Opening frontend at {url}")
-    webbrowser.open(url)
 
-    uvicorn.run(app, host="127.0.0.1", port=3169)
+    def open_browser():
+        time.sleep(1)
+        webbrowser.open(url)
+    threading.Thread(target=open_browser, daemon=True).start()
+
+    uvicorn.run(
+        "backend:app",
+        host="127.0.0.1",
+        port=3169,
+        workers=4,
+        reload=True
+    )

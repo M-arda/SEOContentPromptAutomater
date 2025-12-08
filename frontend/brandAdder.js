@@ -91,6 +91,7 @@ function addBrand(brandObj) {
     let variablesForAPICall = {
         services: brandObject.services,
         audience: brandObject.audience,
+        description: brandObject.description,
         brandKeywords: brandObject.keywords
     }
 

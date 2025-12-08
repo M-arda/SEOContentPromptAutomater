@@ -108,6 +108,7 @@ export async function generate(brand, langs, model) {
             topic: Inptopic,
             services: brandVars.services,
             audience: brandVars.audience,
+            description: brandVars.description,
             brandKeywords: brandVars.brandKeywords,
             ai_model: model,
             langs: langs
@@ -139,8 +140,8 @@ export async function generate(brand, langs, model) {
     let timeoutId = setTimeout(() => {
         clearInterval(pollInterval);
         processEl.textContent = 'Progress Displayer killed due to reduce backend\' job.';
-        // console.error('Poll timeout');
-    }, 1000 * 60 * 10);
+        console.error('Poll timeout');
+    }, 1000 * 60 * 20);
 
     async function pollProgress() {
         console.log('Poll attempt starting for:', jobId);  // Does this fire?

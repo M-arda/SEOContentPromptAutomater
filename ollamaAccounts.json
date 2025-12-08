@@ -1,14 +1,20 @@
 {
     "account1": {
-        "mail": "account1@gmail.com",
+        "mail": "testst@gmail.com",
         "pass": "testest1",
-        "api": "apiKey1",
-        "last_used": 0
+        "api": "key",
+        "last_used": 2
     },
     "account2": {
-        "mail": "account2@gmail.com",
+        "mail": "testestst@gmail.com",
         "pass": "testest1",
-        "api": "apiKey2",
+        "api": "key",
+        "last_used": 0
+    },
+    "account3": {
+        "mail": "testests@gmail.com",
+        "pass": "testest1",
+        "api": "key",
         "last_used": 1
     }
 }

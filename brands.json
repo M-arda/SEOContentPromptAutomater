@@ -5,7 +5,8 @@
         "url":"vayes.com.tr",
         "services":"Web and mobile project development, brand strategy, SEO/SEM and social media management. These services aim to increase visibility and customer conversion, offering solutions that facilitate operational management.",
         "audience":"SMEs, businesses that want to grow or digitize, and startups that want to strengthen their brand identity. People who want to manage their work with a single agency and save time and coordination.",
-        "keywords":"Vayes Digital, full-service digital agency, web design agency, mobile application development, neuromarketing, brand management, brand identity, SEO, SEM, social media management, end-to-end digital solutions, SME digital transformation, corporate web design, responsive web design, digital marketing, increasing digital visibility, digital asset management"
+        "keywords":"Vayes Digital, full-service digital agency, web design agency, mobile application development, neuromarketing, brand management, brand identity, SEO, SEM, social media management, end-to-end digital solutions, SME digital transformation, corporate web design, responsive web design, digital marketing, increasing digital visibility, digital asset management",
+        "description" :"It positions itself as a full-service agency focused on digital transformation. It offers end-to-end digital solutions, from web design and software to brand management, neuromarketing, and mobile applications, aiming to manage clients' digital assets in a holistic and coordinated manner."
     },
     "vayessaglikturizm":{
         "name": "Vayes Sağlık Turizmi",
@@ -13,7 +14,8 @@
         "url":"saglikturizmi.vayes.com.tr",
         "services":"For health tourism; it combines digital marketing, media and video planning, digital ads with PR, software/CRM and patient coordination solutions to increase the visibility and conversion of clinics.",
         "audience":"Private hospitals, clinics and aesthetic/dental centers such as health providers and patients seeking safe, coordinated treatment from home and abroad.",
-        "keywords":"health tourism, health tourism marketing, international patient acquisition, medical partner network, treatment-travel management, health tourism operation, digital marketing, media planning, video planning, digital ads, PR management, software and CRM solutions, patient coordination, increasing clinic visibility, patient conversion optimization"
+        "keywords":"health tourism, health tourism marketing, international patient acquisition, medical partner network, treatment-travel management, health tourism operation, digital marketing, media planning, video planning, digital ads, PR management, software and CRM solutions, patient coordination, increasing clinic visibility, patient conversion optimization",
+        "description" :"It combines marketing and operations in the health tourism ecosystem: establishes a medical partner network, prepares a strategy for international patient acquisition and manages treatment-travel processes with a focus on quality and comfort."
     },
     "mobilappvayes":{
         "name": "Vayes Mobil App",
@@ -21,7 +23,8 @@
         "url":"mobilapp.vayes.com.tr",
         "services":"Android and iOS application development, system integration, maintenance and updates, project management, testing & quality control, and UI/UX design services. Strategic and sustainable software solutions.",
         "audience":"SMEs, entrepreneurs and startups that want to develop digital products or transfer existing systems to mobile platforms.",
-        "keywords":"Vayes MobilApp, mobile application development, Android application development, iOS application development, system integration, software maintenance and updates, project management, testing and quality control, UI/UX design, user experience improvement, digital transformation, SME mobile solutions, startup software solutions, strategic software development, sustainable software solutions, increasing digital efficiency, technical expertise, transition to mobile platform, digital product development"
+        "keywords":"Vayes MobilApp, mobile application development, Android application development, iOS application development, system integration, software maintenance and updates, project management, testing and quality control, UI/UX design, user experience improvement, digital transformation, SME mobile solutions, startup software solutions, strategic software development, sustainable software solutions, increasing digital efficiency, technical expertise, transition to mobile platform, digital product development",
+        "description" :"Vayes MobilApp develops custom software and mobile application solutions to accelerate businesses' digital transformation. It manages project planning, development, testing, and management under one roof. It aims to bring measurable value to brands by combining technology with business objectives."
     },
     "newmedicaapp":{
         "name": "NewMedicaApp",
@@ -29,7 +32,8 @@
         "url":"newmedicaapp.com.tr",
         "services":"Patient tracking, appointment management, reporting and communication modules. Accelerates processes, securely manages data and organizes clinic operations.",
         "audience":"Private clinics and health professionals who want to reduce workload, save time and increase patient satisfaction with digital management.",
-        "keywords":"health management system, clinic management software, digital clinic solutions, appointment management application, patient tracking system, digital solutions for the health sector, clinic process management, mobile health application, patient file management, clinic reporting system, software for health professionals, private clinic management, improving patient experience, health data management, clinic operation management, appointment automation, health software solutions, patient communication module, secure data management, health technologies application, clinic digital transformation, mobile clinic management, increasing efficiency in health, clinic automation system, digital appointment system, increasing patient satisfaction software"
+        "keywords":"health management system, clinic management software, digital clinic solutions, appointment management application, patient tracking system, digital solutions for the health sector, clinic process management, mobile health application, patient file management, clinic reporting system, software for health professionals, private clinic management, improving patient experience, health data management, clinic operation management, appointment automation, health software solutions, patient communication module, secure data management, health technologies application, clinic digital transformation, mobile clinic management, increasing efficiency in health, clinic automation system, digital appointment system, increasing patient satisfaction software",
+        "description" :"The brand streamlines clinical processes by developing digital solutions specifically for the healthcare sector. It integrates operations such as appointment scheduling, patient tracking, and file management into a mobile platform. Its goal is to increase efficiency and enhance the patient experience."
     },
     "mobilly":{
         "name": "Mobilly",
@@ -37,7 +41,8 @@
         "url":"mobilly.com.tr",
         "services":"Business profiles, category filters, map-based navigation and campaign/advertising tools to facilitate customer reach, plus special navigation for large trade centers.",
         "audience":"Local consumers seeking discovery and opportunities and SMEs that want to gain customers and increase visibility.",
-        "keywords":"İstoç application, local business directory, local visibility, business finding application, fast preference, business profiles, category filters, map-based navigation, campaign tools, advertising tools, increasing customer reach, trade center directory, company search, directions, small and medium-sized businesses, local consumer discovery, customer acquisition, mobile application solutions"
+        "keywords":"İstoç application, local business directory, local visibility, business finding application, fast preference, business profiles, category filters, map-based navigation, campaign tools, advertising tools, increasing customer reach, trade center directory, company search, directions, small and medium-sized businesses, local consumer discovery, customer acquisition, mobile application solutions",
+        "description" :"The İstç application makes it easier to find and highlight businesses in the area, supporting local visibility and quick selection."
     },
     "labsvayes":{
         "name": "Vayes Labs",
@@ -45,7 +50,8 @@
         "url":"labs.vayes.com.tr",
         "services":"Product management, SEO, design management, marketing tools and customer service; providing process convenience, increased interaction and measurable performance.",
         "audience":"Mid- and large-scale businesses and SMEs with digitalization needs; decision-makers who want to improve process efficiency and customer experience.",
-        "keywords":"digital transformation, technology company, digitizing operational processes, increasing user interaction, business efficiency, product management, SEO, design management, marketing tools, customer service, process convenience, measurable performance, SME digitalization, process efficiency, improving customer experience, process security"
+        "keywords":"digital transformation, technology company, digitizing operational processes, increasing user interaction, business efficiency, product management, SEO, design management, marketing tools, customer service, process convenience, measurable performance, SME digitalization, process efficiency, improving customer experience, process security",
+        "description" :"A technology company that aims to accelerate the digital transformation of organizations. It digitizes operational processes with modules packaged according to need, focusing on increasing user interaction and business efficiency."
     },
     "draycaatalay":{
         "name": "Uzman Dermatolog Doktor Ayça Atalay",
@@ -53,7 +59,8 @@
         "url":null,
         "services":"Filler and botulinum applications, mesotherapy/hair mesotherapy, rejuvenating injections, laser and energy devices for skin renewal, hair removal and stain/scar treatments; regional slimming and medical skincare.",
         "audience":"Adults wanting aesthetic improvement without surgery, fast recovery and clear results; individuals seeking expert medical solutions.",
-        "keywords":"aesthetic dermatology, clinician dermatologist, skin health, facial aesthetics, body aesthetics, medical aesthetics, non-surgical aesthetics, filler applications, botulinum applications, mesotherapy, hair mesotherapy, rejuvenating injections, laser skin renewal, energy device treatments, hair removal, stain treatment, scar treatment, regional slimming, fat melting, medical skin care, rejuvenation, shaping, skin health solutions, fast recovery, expert aesthetic application, result-oriented aesthetics"
+        "keywords":"aesthetic dermatology, clinician dermatologist, skin health, facial aesthetics, body aesthetics, medical aesthetics, non-surgical aesthetics, filler applications, botulinum applications, mesotherapy, hair mesotherapy, rejuvenating injections, laser skin renewal, energy device treatments, hair removal, stain treatment, scar treatment, regional slimming, fat melting, medical skin care, rejuvenation, shaping, skin health solutions, fast recovery, expert aesthetic application, result-oriented aesthetics",
+        "description" :"As a clinician and aesthetic dermatologist, she specializes in combining skin health and cosmetic procedures with medical standards, offering treatments for facial and body aesthetics. Experience and clinical expertise are paramount, with a focus on non-surgical solutions."
     },
     "meldaozekinci":{
         "name": "Dermatoloji Uzmanı Doktor Melda Özekinci",
@@ -61,7 +68,8 @@
         "url":"meldaozekinci.com",
         "services":"Diagnosis-treatment of skin diseases plus rejuvenation and correction services such as filler-botox, mesotherapy, laser applications, regional tightening and medical skin care.",
         "audience":"Adults with aesthetic expectations and patients with medical skin problems who want effective non-surgical solutions.",
-        "keywords":"specialist dermatologist, medical dermatology, aesthetic cosmetology, skin disease treatment, filler, botox, mesotherapy, laser applications, regional tightening, medical skin care, rejuvenation, skin correction, non-surgical aesthetics, reliable dermatologist, clinical experience, academic dermatology, international experience, aesthetic expectation, medical skin problems, effective aesthetic solutions"
+        "keywords":"specialist dermatologist, medical dermatology, aesthetic cosmetology, skin disease treatment, filler, botox, mesotherapy, laser applications, regional tightening, medical skin care, rejuvenation, skin correction, non-surgical aesthetics, reliable dermatologist, clinical experience, academic dermatology, international experience, aesthetic expectation, medical skin problems, effective aesthetic solutions",
+        "description" :"As a specialist dermatologist, she practices both medical dermatology and aesthetic cosmetology; she uses her clinical experience and academic/international observation experience to provide patient confidence and reliability."
     },
     "ss-proje":{
         "name": "SS Proje",
@@ -69,7 +77,8 @@
         "url":"ss-proje.com",
         "services":"Installation, process optimization, project consultancy and passivation; plus industrial equipment such as filter housing, tank manufacturing, mixers and heat exchangers.",
         "audience":"Industrial facilities, production and process managers and investors needing efficiency, long life and compliance with international quality standards.",
-        "keywords":"SS Proje, engineering company, facility efficiency, sustainable facility solutions, project design, field installation, process improvement, end-to-end technical solutions, installation services, process optimization, project consultancy, passivation, industrial equipment, filter housing, tank manufacturing, mixers, heat exchangers, increasing facility performance, operational reliability, industrial facilities, production managers, process managers, investing companies, long life, international quality standards"
+        "keywords":"SS Proje, engineering company, facility efficiency, sustainable facility solutions, project design, field installation, process improvement, end-to-end technical solutions, installation services, process optimization, project consultancy, passivation, industrial equipment, filter housing, tank manufacturing, mixers, heat exchangers, increasing facility performance, operational reliability, industrial facilities, production managers, process managers, investing companies, long life, international quality standards",
+        "description" :"SS Project is an engineering and implementation company focused on increasing the efficiency and sustainability of facilities; it offers end-to-end technical solutions from project design to field installation and process improvement."
     },
     "serdargursoy":{
         "name": "Serdar Gürsoy",
@@ -77,7 +86,8 @@
         "url":"serdargursoy.com",
         "services":"Training and consultancy in social media, digital marketing, SEO, e-commerce and advertising management.",
         "audience":"Brands, entrepreneurs and marketing professionals wanting to grow in the digital field.",
-        "keywords":"Serdar Gürsoy, digital marketing expert, technology consultant, strategic management, digital marketing consultancy, training services, social media training, SEO training, e-commerce consultancy, advertising management, increasing digital awareness, campaign performance improvement, digital strategy development, sustainable digital strategy, entrepreneur training, marketing professionals, digital growth support, digital transformation, strengthening brand digital assets"
+        "keywords":"Serdar Gürsoy, digital marketing expert, technology consultant, strategic management, digital marketing consultancy, training services, social media training, SEO training, e-commerce consultancy, advertising management, increasing digital awareness, campaign performance improvement, digital strategy development, sustainable digital strategy, entrepreneur training, marketing professionals, digital growth support, digital transformation, strengthening brand digital assets",
+        "description" :"Serdar Gürsoy is an experienced professional who provides strategic management, consulting, and training services in digital marketing and technology. Through his founding partner, Vayes Digital, he focuses on strengthening brands' digital assets and supporting their transformation processes with measurable success."
     },
     "bklogistics":{
         "name": "Bk Logistics",
@@ -85,7 +95,8 @@
         "url":"bklogistics.de",
         "services":"Daily scheduled transportation, express deliveries, low-bed transportation, fast unloading and flexible transportation solutions.",
         "audience":"Manufacturers, supply chain managers and businesses needing fast/special transportation within Turkey.",
-        "keywords":"BK Logistics, logistics company, Turkey logistics, on-time delivery, reliable logistics, operational logistics, planning and organization, supervised transportation, flexible transportation, per-order meticulousness, daily scheduled transportation, express delivery, low-bed transportation, fast unloading, special cargo transportation, trackable logistics solutions, manufacturer logistics, supply chain management, fast transportation solutions, domestic Turkey logistics, operational assurance, logistics services"
+        "keywords":"BK Logistics, logistics company, Turkey logistics, on-time delivery, reliable logistics, operational logistics, planning and organization, supervised transportation, flexible transportation, per-order meticulousness, daily scheduled transportation, express delivery, low-bed transportation, fast unloading, special cargo transportation, trackable logistics solutions, manufacturer logistics, supply chain management, fast transportation solutions, domestic Turkey logistics, operational assurance, logistics services",
+        "description" :"This Türkiye-focused logistics company has an operational structure focused on ensuring reliable, on-time deliveries through planning, organization, and oversight. Flexibility and meticulous attention to detail are at the forefront."
     },
     "imamoglu":{
         "name": "İmamoglu",
@@ -93,7 +104,8 @@
         "url":"imamoglu.com.tr",
         "services":"Industrial cold room parts, refrigerator and showcase cooler spare parts, aluminum profiles and frigorific group products with energy-efficient, durable production.",
         "audience":"Industrial kitchen manufacturers, service providers, cooling system suppliers and large-scale businesses needing reliable, durable parts.",
-        "keywords":"İmamoğlu, industrial cooling, kitchen equipment manufacturer, industrial cold room parts, refrigerator spare parts, showcase cooler parts, aluminum profiles, frigorific group products, R&D-supported production, energy-efficient equipment, durable cooling solutions, environmentally friendly production, long-lasting cooling systems, high-performance equipment, quality control, export-oriented production, industrial kitchen manufacturers, service providers, cooling systems suppliers, large-scale businesses, reliable spare parts, energy-saving solutions, local and global market, customer satisfaction, logistics power"
+        "keywords":"İmamoğlu, industrial cooling, kitchen equipment manufacturer, industrial cold room parts, refrigerator spare parts, showcase cooler parts, aluminum profiles, frigorific group products, R&D-supported production, energy-efficient equipment, durable cooling solutions, environmentally friendly production, long-lasting cooling systems, high-performance equipment, quality control, export-oriented production, industrial kitchen manufacturers, service providers, cooling systems suppliers, large-scale businesses, reliable spare parts, energy-saving solutions, local and global market, customer satisfaction, logistics power",
+        "description" :"İmamoğlu Cooling is a well-established manufacturer of industrial refrigeration and kitchen equipment. Since 1994, it has established a strong position in both the Turkish and global markets by producing spare parts and equipment for refrigeration systems. With its quality control and export-focused structure, the company prioritizes continuity and reliability in production."
     },
     "gunaysogutma":{
         "name": "Günay Soğutma",
@@ -101,7 +113,8 @@
         "url":"gunaysogutma.com.tr",
         "services":"Evaporator, condenser, axial fan and resistance production with serial and custom production capability to strengthen cooling infrastructure.",
         "audience":"Industrial facilities, production lines, and food/energy sector businesses needing reliable and efficient cooling systems.",
-        "keywords":"Günay Soğutma, industrial cooling, evaporator production, condenser production, axial fan, resistance, cooling infrastructure, facility cooling solutions, serial production, custom production, energy efficiency, ease of maintenance, long-lasting use, high efficiency, durability, industrial facilities, production lines, food sector, energy sector, reliable cooling systems, sustainable cooling solutions, technical expertise, customer-oriented service"
+        "keywords":"Günay Soğutma, industrial cooling, evaporator production, condenser production, axial fan, resistance, cooling infrastructure, facility cooling solutions, serial production, custom production, energy efficiency, ease of maintenance, long-lasting use, high efficiency, durability, industrial facilities, production lines, food sector, energy sector, reliable cooling systems, sustainable cooling solutions, technical expertise, customer-oriented service",
+        "description" :"Günay Cooling is a well-established brand with years of experience in industrial cooling systems, combining production, design, and development processes. By combining modern technology with traditional manufacturing discipline, we offer solutions focused on high efficiency and durability."
     },
     "gucumpompa":{
         "name": "Gücüm Pompa",
@@ -109,7 +122,8 @@
         "url":"gucumpompa.com",
         "services":"Single and double stage, monoblock, pallet type and ECO-SYS smart vacuum pumps; complete vacuum system design.",
         "audience":"Food, chemistry, plastic, textile, glass-ceramic, paper and health sectors needing reliable high-performance vacuum systems.",
-        "keywords":"Gücüm Pompa, industrial vacuum systems, vacuum pumps, single-stage vacuum pump, two-stage vacuum pump, monoblock vacuum pump, pallet vacuum pump, ECO-SYS vacuum series, smart vacuum systems, complete vacuum systems, industrial solutions, high-performance vacuum, energy-efficient vacuum, long-lasting vacuum devices, food sector vacuum solutions, chemistry sector, plastic production, textile production, glass-ceramic production, paper production, health sector, production-oriented industrial businesses, reliable vacuum systems, uninterrupted vacuum performance"
+        "keywords":"Gücüm Pompa, industrial vacuum systems, vacuum pumps, single-stage vacuum pump, two-stage vacuum pump, monoblock vacuum pump, pallet vacuum pump, ECO-SYS vacuum series, smart vacuum systems, complete vacuum systems, industrial solutions, high-performance vacuum, energy-efficient vacuum, long-lasting vacuum devices, food sector vacuum solutions, chemistry sector, plastic production, textile production, glass-ceramic production, paper production, health sector, production-oriented industrial businesses, reliable vacuum systems, uninterrupted vacuum performance",
+        "description" :"Güçüm Pompa is a well-established brand active in the production and development of industrial vacuum systems. It adopts a quality, durability, and efficiency-focused approach to its production processes. It has established a trusted brand image by offering industrial solutions in both domestic and international markets."
     },
     "tekprosis":{
         "name":"Tekprosis",
@@ -117,6 +131,7 @@
         "url":"tekprosis.com",
         "services":"Cloud-based ERP / pre-accounting, sales, purchasing and business processes; CRM and Mikro CRM integration; web design, e-commerce consultancy, hosting, technical service and local Mikro software dealership.",
         "audience":"SMEs and commercial businesses needing ERP/pre-accounting/CRM; local businesses needing web, e-commerce or field technical support.",
-        "keywords":"Tekprosis, Tekprosis Computer, Mikro Software solution partner, cloud ERP, pre-accounting software, CRM software, Mikro CRM integration, web design service, e-commerce consultancy, hosting and domain, technical service, field service, 24/7 technical support, software consultancy, software training"
+        "keywords":"Tekprosis, Tekprosis Computer, Mikro Software solution partner, cloud ERP, pre-accounting software, CRM software, Mikro CRM integration, web design service, e-commerce consultancy, hosting and domain, technical service, field service, 24/7 technical support, software consultancy, software training",
+        "description" :"It is a solution partner that provides micro/enterprise software and IT services to organizations. It offers software, hosting, and technical support services focused on digitizing businesses' business processes and increasing efficiency. The site highlights Tekprosis's 24+ years of experience as a Micro Software reseller, providing enterprise IT solutions with numerous clients and projects."
     }
 }
