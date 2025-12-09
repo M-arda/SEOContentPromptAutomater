@@ -222,11 +222,8 @@ Topic details:
 
 
 def translate_html(html_input, target_lang):
-    """
-    Swaps highlights to **bold** marker, translates full marked text in context, extracts translated bold,
-    wraps it back in tags. Targets p/h2/h3/li, preserves structure/ul.
-    """
-    # Lang map: full name -> ISO code
+
+    # --- language map ---
     lang_map = {
         'turkish': 'tr',
         'english': 'en',
@@ -236,45 +233,33 @@ def translate_html(html_input, target_lang):
         'spanish': 'es',
         'german': 'de'
     }
-    
-    # Normalize to code if full name
     if target_lang.lower() in lang_map:
         target_lang = lang_map[target_lang.lower()]
+
+    translator = GoogleTranslator(source='auto', target=target_lang)
+    soup = BeautifulSoup(html_input, "html.parser")
+
+    # Tags we care about
+    target_tags = ["p", "h2", "h3", "li"]
+
+    for tag in soup.find_all(target_tags):
+        # Find all spans with the specific class
+        for span in tag.find_all("span", class_="Renk--Metin-ANTRASIT"):
+            strong = span.find("strong")
+            if strong and strong.text.strip():
+                text = strong.text.strip()
+                span.replace_with(f"[[[{text}]]]")
+            else:
+                # If strong is missing or empty, still replace span with nothing meaningful
+                span.replace_with("[[[]]]")
+    try:
+        translated_html = translator.translate(str(soup))
+    except Exception:
+        translated_html = str(soup)
+        print(Exception)
     
-    translator = GoogleTranslator(source='en', target=target_lang)
-    soup = BeautifulSoup(html_input, 'html.parser')
-    
-    # Target elements: p, h2, h3, li (ul skipped as wrapper)
-    for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
-        has_marker = False
-    # Swap span to **bold** marker
-    span = elem.find('span', class_='Renk--Metin-ANTRASIT')
-    if span and span.strong:
-        bold_text = span.strong.get_text(strip=True)
-        span.replace_with(f'**{bold_text}**')
-        has_marker = True
-    
-    # Grab full marked text (or plain)
-    full_text = elem.get_text(separator=' ', strip=True)
-    
-    # Always translate full (context for all)
-    full_translated = translator.translate(full_text)
-    
-    final_text = full_translated
-    if has_marker:
-        # Extract translated bold from between **
-        bold_match = re.search(r'\*\*(.*?)\*\*', full_translated)
-        if bold_match:
-            translated_bold = bold_match.group(1).strip()
-            def replace_bold(match):
-                return f' <span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span> '
-            final_text = re.sub(r'\*\*(.*?)\*\*', replace_bold, full_translated)
-    
-    # Nuke and insert
-    elem.clear()
-    elem.append(final_text)
-    
-    return str(soup).replace('&lt;','<').replace('&gt;','>')
+
+    return translated_html.replace('&lt;','<').replace('&gt;','>')
     
 
 # client = get_client()
@@ -283,6 +268,9 @@ def generate_text(prompt: str, requested_model: str) -> str:
 
     # print("generating")
     model_priority = [
+        MODELS["qwen"],
+        MODELS["qwen"],
+        MODELS["qwen"],
         MODELS["qwen"],
         MODELS["gpt"],
         MODELS["derin"],
@@ -403,12 +391,13 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             else:
                 contents[lang] = ""
                 for content_w_subtitle in contents_subtitled:
-                    # translated_subtitled = generate_text(
-                    #     PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
-                    #     model_name
-                    # )
-                    translated_subtitled = translate_html(content_w_subtitle, target_lang=lang)
+                    translated_subtitled = generate_text(
+                        PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
+                        model_name
+                    )
+                    # translated_subtitled = translate_html(content_w_subtitle, target_lang=lang)
                     contents[lang] += translated_subtitled
+            update_job(job_id, 'translating', 4, f"{lang} finished.")
         update_job(job_id, 'running', 4, "Translations complete.")
 
         # Meta Descs

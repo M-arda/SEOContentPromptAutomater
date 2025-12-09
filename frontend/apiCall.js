@@ -137,11 +137,6 @@ export async function generate(brand, langs, model) {
 
     // Poll loop—bail on done/error or 30s timeout
     let pollInterval;
-    let timeoutId = setTimeout(() => {
-        clearInterval(pollInterval);
-        processEl.textContent = 'Progress Displayer killed due to reduce backend\' job.';
-        console.error('Poll timeout');
-    }, 1000 * 60 * 20);
 
     async function pollProgress() {
         console.log('Poll attempt starting for:', jobId);  // Does this fire?
@@ -157,7 +152,6 @@ export async function generate(brand, langs, model) {
 
             if (progData.status === 'done' && progData.data) {
                 clearInterval(pollInterval);
-                clearTimeout(timeoutId);
                 processEl.textContent = 'Done';
                 // Populate from final data
                 const data = progData.data;
@@ -190,7 +184,6 @@ export async function generate(brand, langs, model) {
 
             } else if (progData.status === 'error') {
                 clearInterval(pollInterval);
-                clearTimeout(timeoutId);
                 processEl.textContent = `Error: ${progData.message}`;
 
                 // playSound()
@@ -198,7 +191,6 @@ export async function generate(brand, langs, model) {
         } catch (err) {
             console.error('Poll bombed:', err);
             clearInterval(pollInterval);
-            clearTimeout(timeoutId);
             processEl.textContent = 'Poll connection issue—retry?';
         }
     };
