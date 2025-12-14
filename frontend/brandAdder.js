@@ -80,24 +80,25 @@ function brandJson() {
     reader.readAsText(file);
 }
 
+function getPrompts(brand){
+    let systemBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
+    let subtitleBox = document.querySelector(`#${brand}prompts .subtitle.promptBox textarea`)
+    let contentBox = document.querySelector(`#${brand}prompts .content.promptBox textarea`)
+    let metaDescBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
+    return {
+        "system":`${systemBox.value}`,
+        "subtitle":`${subtitleBox.value}`,
+        "content":`${contentBox.value}`,
+        "metaDesc":`${metaDescBox.value}`,
+    }
+}
+
 
 
 
 function addBrand(brandObj) {
     let brandObject = JSON.parse(brandObj);
     let brandNameDeasciified = deasciifierNLowerer(brandObject.name);
-
-
-    let variablesForAPICall = {
-        services: brandObject.services,
-        audience: brandObject.audience,
-        description: brandObject.description,
-        brandKeywords: brandObject.keywords
-    }
-
-    window.brandAPIvars = window.brandAPIvars || {};
-    window.brandAPIvars[brandNameDeasciified] = variablesForAPICall;
-
 
     let brandBtn = document.createElement('button');
     brandBtn.classList.add('tablink');
@@ -129,7 +130,18 @@ function addBrand(brandObj) {
         <label>Başlık</label>
         <input type="text" id="${brandNameDeasciified}BaslikInp"><br>
         <button class="sendAI" marka="${brandNameDeasciified}" id="${brandNameDeasciified}SendAI">AI'a Gönder</button><br>
-        <p id="${brandNameDeasciified}onGoingProcess">Waiting</p>${brandBodyLangs}</div>`
+        <p id="${brandNameDeasciified}onGoingProcess">Waiting</p>
+        ${brandBodyLangs}
+        <div id="${brandNameDeasciified}prompts">
+            <div class="system promptBox"><h4>System Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.system}</textarea></div>
+            <div class="subtitle promptBox"><h4>Subtitle Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.subtitle}</textarea></div>
+            <div class="content promptBox"><h4>Content Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.content}</textarea></div>
+            <div class="metaDesc promptBox"><h4>MetaDesc Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.metaDesc}</textarea></div>
+        </div>
+        <div id="${brandNameDeasciified}history">
+            <h3>History</h3>
+        </div>
+        </div>`
 
 
     brandHub.insertAdjacentHTML('beforeend', brandBody)
@@ -154,7 +166,7 @@ function addBrand(brandObj) {
     });
 
     let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
-    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs));
+    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs,undefined, brandObject.services, brandObject.audience, brandObject.description,brandObject.keywords, getPrompts(brandNameDeasciified)));
 }
 
 // EventListeners

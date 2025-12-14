@@ -11,8 +11,8 @@ from ollama import Client
 import subprocess
 from fastapi.middleware.cors import CORSMiddleware
 import sys
-from OllamaAccountSwitchTest import get_next_account
-from OllamaAccountSwitchTest import get_account_count
+from OllamaAccountSwitch import get_next_account
+from OllamaAccountSwitch import get_account_count
 from uuid import uuid4
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
@@ -38,13 +38,12 @@ origins = [
     "*",  # optional: allow all origins
 ]
 
-def get_client():
-    account = get_next_account() 
+def get_client(is_first=False):
+    account = get_next_account(first_time=is_first) 
     api_key = account["api"]
     print(f"API Key Changed -> {account['name']} ({api_key[:15]}...)")
-    return Client(
-        headers={'Authorization': f'Bearer {api_key}'}
-)
+
+    return Client(headers={'Authorization': f'Bearer {api_key}'})
 
 
 # def ensure_ollama_running():
@@ -76,7 +75,7 @@ def get_client():
 #             raise e
 
 # ensure_ollama_running()
-client = get_client()
+client = get_client(is_first=True)
 app = FastAPI()
 
 jobs = {}  # {job_id: {'status': str, 'progress': int, 'message': str, 'data': dict or None}}
@@ -105,7 +104,7 @@ app.mount("/sounds", StaticFiles(directory=SOUNDS_DIR), name="sounds")
 
 # Load available models
 
-PROMPTS = {
+PROMPTS_OBSOLETE = {
     # Alt Başlıklar için Prompt
     "subtitlePrompt": """
 You are an expert in SEO, digital marketing, and content optimization since the dawn of the internet, with a deep understanding of transactional strategies to drive conversions, leads, and sales.
@@ -138,7 +137,7 @@ You are an expert in SEO, digital marketing, and content optimization since the 
 
 Topic / Subtitle: {subtitle}
 
-Brand Info (provide exactly as below, one per line):
+Brand Info:
 Brand Name: {brand_name}
 Brand Description: {brand_description}
 Target Audience: {brand_audience}
@@ -187,33 +186,30 @@ Content to translate:
     #Meta Description için prompt
 
     "metaDescPrompt":"""
-You are an expert in SEO and digital marketing. Your task is to generate CTA-style meta descriptions (action-oriented summaries that hook users to click, e.g., "Discover X's features and boost your Y—start free today!") summarizing the provided HTML content, tailored to {brand_keywords}, {brand_audience}, and {brand_services}.
+You are an expert in SEO and digital marketing. Your task is to generate a CTA-style meta description (action-oriented summary that hooks clicks, e.g., \"Tame melasma triggers with safe lasers and routines—book your consult for even skin today!\") from the provided topic, subtitles, and keywords, tailored to {brand_audience} and {brand_services}.
+
+Topic: {topic}
+Subtitles: {subtitles}
+Keywords: {content_keywords}
 
 Strict Rules:
-- Extract ONLY the visible text from the HTML by parsing and concatenating all text nodes (e.g., content inside <p>, <h1>, <span>, etc.), ignoring tags, attributes, scripts, styles, comments, and non-text elements like images or empty nodes. Treat the extracted text as a cohesive summary source.
-- For each language, ensure the meta description is strictly under 130 characters (count every letter, number, punctuation, space, and special character precisely; verify the count internally before finalizing—aim for 100-120 chars for safety).
-- Summarize faithfully: Emphasize {content_keywords} from the product, highlight key features and benefits targeted at {brand_audience}, and include commercial hooks like {brand_services}, pricing details, free trials, or urgency calls-to-action to encourage clicks.
-- Make each description engaging, persuasive, and SEO-optimized with natural inclusion of {content_keywords} where relevant, ending with a strong CTA verb (e.g., "Try now!", "Sign up free!").
-- Translate into the exact languages listed in {langs} (a comma-separated list, e.g., "es,fr,de" for Spanish, French, German). Generate one description per language in the precise order provided in {langs}.
-- Output ALL descriptions in a SINGLE line, separated by | (e.g., "Desc in es|Desc in fr|Desc in de"). Include NO labels, numbering, explanations, introductions, conclusions, or any extra text—pure output only.
-- Handle special cases: If {langs} is empty or invalid, output "No languages specified." If the extracted text is too short or irrelevant, create a generic CTA based on brand placeholders, but prioritize fidelity to content.
-- Do NOT add any metadata, character counts, or comments in the output.
+- Distill from {topic}, {subtitles} (treat as key angles), and {content_keywords}—blend into a cohesive hook without adding fluff or inventing details.
+- Strictly under 130 characters (count every letter, number, punctuation, space precisely; verify internally, aim 100-120 for SERP bite).
+- Summarize faithfully: Spotlight top {content_keywords}, hit {brand_audience} pains/benefits (e.g., quick non-surgical fixes), weave {brand_services} hooks like consults or low-downtime care. End with strong CTA verb (e.g., \"Schedule now!\").
+- Engaging, persuasive, SEO-optimized: Natural {content_keywords} flow, no hype—nod evidence-based vibes for trust.
+- Output the single description only. No labels, extras, counts, or text—pure output.
 
-HTML content to summarize:
-{content}
 """,
     # Meta Keywords için Prompt
     "metaKeywordPrompt":"""
-    You are an expert in SEO and digital marketing. Generate a concise, high-impact meta keywords list summarizing the {topic}, optimized for {brand_keywords}, targeted at {brand_audience}, and highlighting {brand_services}.
-
+You are an expert in SEO and digital marketing. Generate a concise, high-impact meta keywords list summarizing the {topic}, optimized for {brand_keywords}, targeted at {brand_audience}, and highlighting {brand_services}.
 Strict Rules:
-- Extract the most relevant terms directly from {topic}, then naturally blend in {brand_keywords} and {brand_services} for maximum search relevance.
-- Produce exactly 5–10 powerful keywords/phrases per language: include a mix of head terms, long-tail phrases focused on {brand_audience} pain points/benefits, and action-oriented terms tied to {brand_services} (e.g., "AI workflow automation", "CRM implementation services").
-- Keep each language’s list under 200 characters total (count every letter, comma, and space; verify the exact count internally before finalizing—target 120-180 chars for safety).
-- Generate one list per language specified in {langs}, strictly in the order given.
-- Format each list as a plain comma-separated string with NO quotes, brackets, or extra punctuation (e.g., "automatización IA,consultoría CRM,flujos de trabajo inteligentes").
-- Output everything on a SINGLE line: language lists separated only by | (e.g., "kw1,kw2,kw3|kw1,kw2,kw3,kw4|kw1,kw2"). Absolutely NO labels, language codes, numbering, explanations, line breaks, or any other text.
-- If {langs} is missing or empty, output "No languages specified." Otherwise assume the list is valid.
+
+Extract the most relevant terms directly from {topic}, then naturally blend in {brand_keywords} and {brand_services} for maximum search relevance.
+Produce exactly 5–10 powerful keywords/phrases: include a mix of head terms, long-tail phrases focused on {brand_audience} pain points/benefits, and action-oriented terms tied to {brand_services}.
+Keep the list under 200 characters total (count every letter, comma, and space; verify the exact count internally before finalizing—target 120-180 chars for safety).
+Format as a plain comma-separated string with NO quotes, brackets, or extra punctuation.
+Output just the one English list. Absolutely NO labels, numbering, explanations, line breaks, or any other text.
 
 Topic details:
 {topic}
@@ -221,7 +217,7 @@ Topic details:
 }
 
 
-def translate_html(html_input, target_lang):
+def google_translate(input, target_lang, is_HTML):
     """
     Swaps highlights to **bold** marker, translates full marked text in context, extracts translated bold,
     wraps it back in tags. Targets p/h2/h3/li, preserves structure/ul.
@@ -240,103 +236,128 @@ def translate_html(html_input, target_lang):
     # Normalize to code if full name
     if target_lang.lower() in lang_map:
         target_lang = lang_map[target_lang.lower()]
+    else:
+        return "Requested language not found in lang_map"
     
     translator = GoogleTranslator(source='en', target=target_lang)
-    soup = BeautifulSoup(html_input, 'html.parser')
+
+    if not is_HTML:
+        return translator.translate(input)
+    
+
+    soup = BeautifulSoup(input, 'html.parser')
     
     # Target elements: p, h2, h3, li (ul skipped as wrapper)
     for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
         has_marker = False
     # Swap span to **bold** marker
-    span = elem.find('span', class_='Renk--Metin-ANTRASIT')
-    if span and span.strong:
-        bold_text = span.strong.get_text(strip=True)
-        span.replace_with(f'**{bold_text}**')
-        has_marker = True
+        span = elem.find('span', class_='Renk--Metin-ANTRASIT')
+        if span and span.strong:
+            bold_text = span.strong.get_text(strip=True)
+            span.replace_with(f'**{bold_text}**')
+            has_marker = True
+        
+        # Grab full marked text (or plain)
+        full_text = elem.get_text(separator=' ', strip=True)
+        
+        # Always translate full (context for all)
+        full_translated = translator.translate(full_text)
     
-    # Grab full marked text (or plain)
-    full_text = elem.get_text(separator=' ', strip=True)
-    
-    # Always translate full (context for all)
-    full_translated = translator.translate(full_text)
-    
-    final_text = full_translated
-    if has_marker:
-        # Extract translated bold from between **
-        bold_match = re.search(r'\*\*(.*?)\*\*', full_translated)
-        if bold_match:
-            translated_bold = bold_match.group(1).strip()
-            def replace_bold(match):
-                return f' <span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span> '
-            final_text = re.sub(r'\*\*(.*?)\*\*', replace_bold, full_translated)
-    
-    # Nuke and insert
-    elem.clear()
-    elem.append(final_text)
+        final_text = full_translated
+        if has_marker:
+            # Extract translated bold from between **
+            bold_match = re.search(r'\*\*(.*?)\*\*', full_translated)
+            if bold_match:
+                translated_bold = bold_match.group(1).strip()
+                def replace_bold(match):
+                    return f'<span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span>'
+                final_text = re.sub(r'\*\*(.*?)\*\*', replace_bold, full_translated)
+        
+        # Nuke and insert
+        elem.clear()
+        elem.append(final_text)
     
     return str(soup).replace('&lt;','<').replace('&gt;','>')
     
-
+current_brand = ""
+messages = []
 # client = get_client()
-def generate_text(prompt: str, requested_model: str) -> str:
-    global client
-
+def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:str) -> str:
+    global current_brand, messages, client
+    if not current_brand == brand:
+        current_brand = brand
+        messages = []
+        messages.append({
+            'role':'system',
+            'content':f'{system_prompt}'
+        })
+    
     # print("generating")
     model_priority = [
-        MODELS["qwen"],
-        MODELS["gpt"],
+        MODELS["derin"],
+        MODELS["derin"],
+        MODELS["derin"],
+        MODELS["derin"],
+        MODELS["derin"],
+        MODELS["derin"],
+        MODELS["derin"],
         MODELS["derin"],
         MODELS["qwen"],
-        MODELS["derin"],
-        MODELS["gpt"],
-        MODELS["derin"],
         requested_model,
+        MODELS["qwen"],
+        MODELS["gpt"],
+        MODELS["gpt"],
     ]
 
     idx = 0
     account_counter = 0
+    messages.append({'role':'user','content':f'{prompt}'})
     while True:
         try:
-            print(f"Generating with -> Model: {model_priority[idx]}, Account_Key : {dict(client._client._headers)['authorization']}")
+            print(f"Generating with -> Model: {model_priority[idx]}, Account : {dict(client._client._headers)['authorization']}")
 
+            
             start = time.time()
-            response = client.generate(model=model_priority[idx], prompt=prompt)
+            # response = client.generate(model=model_priority[idx], prompt=prompts[generation_type])
+            response = client.chat(model=model_priority[idx],messages=messages)
             elapsed = round(time.time() - start, 2)
             print(f"Completed in {elapsed}s\n")
             print(f"Success with {model_priority[idx]}")
-            return response.response.strip()
+            messages.append({'role': 'assistant', 'content': response['message']['content']})
+            return response['message']['content']
 
         except Exception as e:
             error_str = str(e).lower()
             status_code = getattr(e, "status_code", None)
 
-            if idx >= len(model_priority) or account_counter >= get_account_count():
+            if idx >= len(model_priority) or account_counter >= get_account_count()*2:
                 break
 
             if status_code in (429, 401) or "429" in error_str or "rate limit" in error_str or "unauthorized" in error_str:
                 client = get_client()
                 account_counter+=1
                 print(f"429/401 detected -> switching to next API key (retrying {model_priority[idx]})")
+                print(f"{error_str}")
                 continue  # try same model_priority[idx] again with new key
 
             else:
+                print(f"{model_priority[idx-1] if idx > 0 else f'{MODELS['derin']}'} failed...")
                 idx+=1
-                print(f"{model_priority[idx]} failed ({e}) -> moving to next model")
                 continue
 
-    print(f"All accounts exhausted for {model_priority[idx]} -> trying next model\n")
+    print(f"All accounts exhausted or None of the models are reachable\n")
 
     return "|   THIS PROCESS FAILED    |"
 
-def run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description):
+def run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description, brand_prompts):
 
     try:
         # Subtitles
         subtitles = []
         update_job(job_id, 'generating', 1, 'Generating subtitles...')
-        subtitle_prompt = PROMPTS["subtitlePrompt"].format(
+        subtitle_prompt = brand_prompts["subtitle"].format(
             topic=topic, brand_name=brand, brand_audience=audience, brand_description=description)
-        subtitles_response = generate_text(subtitle_prompt, model_name)
+        subtitles_response = generate_text(subtitle_prompt, model_name, brand, brand_prompts['system'])
         print(f"Subtitle Text {subtitles_response}")
 
         titles_raw = [line.strip() for line in subtitles_response.splitlines() if line.strip()]
@@ -352,7 +373,7 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         subtitlesHTML = "<h3>Table of Contents</h3><ul>"
         for i, s in enumerate(subtitles):
             print(f"{i}. {s}")
-            subtitlesHTML = subtitlesHTML.replace('%',' percent')
+            subtitlesHTML = subtitlesHTML.replace('%',' percent').replace('—','-')
             subtitlesHTML += f"<li>{subtitles[i]}</li>"
         subtitlesHTML += "</ul>"
 
@@ -360,16 +381,16 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         metaKeywords = {}
         update_job(job_id, 'generating', 2, "Cranking meta keywords...")
         metaKeywords_raw = generate_text(
-            PROMPTS['metaKeywordPrompt'].format(
-                topic=topic, brand_keywords=brandKeywords, brand_audience=audience, 
-                brand_services=services, langs=",".join(langs)
+            PROMPTS_OBSOLETE['metaKeywordPrompt'].format(
+                topic=topic, brand_keywords=brandKeywords, brand_audience=audience, brand_services=services
             ), 
-            model_name
+            model_name, brand, brand_prompts['system']
         )
-        keyword_lists = [kw_list.strip() for kw_list in metaKeywords_raw.split('|') if kw_list.strip()]
-        for i in range(len(langs)):
-            kws = [kw.strip() for kw in keyword_lists[i].split(',') if kw.strip()]
-            metaKeywords[langs[i]] = kws
+        
+        for lang in langs:
+            if lang == "english":
+                metaKeywords[lang] = metaKeywords_raw
+            metaKeywords[lang] = google_translate(metaKeywords_raw, target_lang=lang, is_HTML=False)
         update_job(job_id, 'running', 2, "Meta keywords locked in.")
 
         # Content gen
@@ -378,11 +399,11 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         update_job(job_id, 'generating', 3, f"Generating {total} content sections...")
         for idx, subtitle in enumerate(subtitles, start=1):
             print(f"\n[{idx}/{total}] Generating content for subtitle: '{subtitle}'")
-            content_prompt = PROMPTS["contentPrompt"].format(
+            content_prompt = brand_prompts["content"].format(
                 subtitle=subtitle, brand_name=brand,
                 content_keywords=metaKeywords.get("english", []), brand_audience=audience, brand_description=description
             )
-            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name)
+            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name, brand, brand_prompts['system'])
             content_text = content_text.replace('%',' percent')
             contents_subtitled.append(content_text)
             sub_step = f'3.{idx}'
@@ -407,23 +428,27 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
                     #     PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
                     #     model_name
                     # )
-                    translated_subtitled = translate_html(content_w_subtitle, target_lang=lang)
+                    translated_subtitled = google_translate(content_w_subtitle, target_lang=lang, is_HTML=True)
+                    translated_subtitled = translated_subtitled.replace('%',f" {google_translate('percent', target_lang=lang, is_HTML=False)}").replace('—','-')
                     contents[lang] += translated_subtitled
+            update_job(job_id, 'translating', 4, f"{lang} finished.")
         update_job(job_id, 'running', 4, "Translations complete.")
 
         # Meta Descs
         metaDescs = {}
         update_job(job_id, 'generating', 5, 'Building meta descriptions...')
         metaDescription_raw = generate_text(
-            PROMPTS['metaDescPrompt'].format(
-                content=contents.get('english', ''), brand_keywords=brandKeywords, 
-                brand_audience=audience, content_keywords=metaKeywords.get("english", []), brand_services=services, langs=",".join(langs)
+            brand_prompts['metaDesc'].format(
+                content=contents.get('english', ''), 
+                brand_audience=audience, content_keywords=metaKeywords.get("english", []), brand_services=services, subtitles=",".join(subtitles)
             ), 
-            model_name
+            model_name, brand, brand_prompts['system']
         )
-        metaDescription = [desc.strip().strip("|") for desc in metaDescription_raw.split("|") if desc.strip()]
-        for i in range(len(langs)):
-            metaDescs[langs[i]] = metaDescription[i]
+        metaDescription_raw = metaDescription_raw.replace('%',' percent').replace('—','-')
+        for lang in langs:
+            if lang == "english":
+                metaDescs[lang] = metaDescription_raw
+            metaDescs[lang] = google_translate(metaDescription_raw, target_lang=lang, is_HTML=False)
         update_job(job_id, 'running', 5, "Meta descs ready.")
 
         # Final
@@ -431,9 +456,12 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             "subtitles": subtitles,
             "contents": contents,
             "metaDescs": metaDescs,
-            "metaKeywords": metaKeywords
+            "metaKeywords": metaKeywords,
+            "topic":topic,
+            "langs":langs
         }
         update_job(job_id, 'done', 5, "Full results ready.", final_data)
+        print(messages)
 
         # return {
         #     "subtitles": subtitles,
@@ -455,6 +483,7 @@ def generate(
     audience: str = Body(..., embed=True),
     brandKeywords: str = Body(..., embed=True),
     description: str = Body(...,embed=True),
+    prompts: dict = Body(...,embed=True),
     background_tasks: BackgroundTasks = None
 ):
     job_id = str(uuid4())
@@ -466,7 +495,7 @@ def generate(
     model_name = MODELS["derin"]
     print(f"\nStarting generation for topic: '{topic}'")
 
-    background_tasks.add_task(run_generation, job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description)
+    background_tasks.add_task(run_generation, job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description, prompts)
     # return run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description)
     return JSONResponse({"job_id": job_id, "status": "started", "message": "Job queued—polling for updates."})
 

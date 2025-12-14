@@ -59,7 +59,7 @@ function deasciifierNLowerer(str) {
 //         .catch(e => console.log("Audio load/play issue:", e));
 // }
 
-export async function generate(brand, langs, model) {
+export async function generate(brand, langs, model,service, audience, description,brandKeywords, prompts) {
     model = "deepseek-v3.1:671b-cloud"
     const brandDeasciified = deasciifierNLowerer(brand);
     const processEl = document.getElementById(`${brandDeasciified}onGoingProcess`);  // Grab for updates
@@ -72,6 +72,7 @@ export async function generate(brand, langs, model) {
     const Inptopic = document.querySelector(`#${brandDeasciified}BaslikInp`).value;
 
     // Map content boxes for each language
+    const historyBox = document.querySelector(`#${brandDeasciified}history`)
     const contentBoxMap = {};
     const metaDescBoxMap = {};
     const metaKwsBoxMap = {};
@@ -91,27 +92,19 @@ export async function generate(brand, langs, model) {
         }
     });
 
-    const brandVars = window.brandAPIvars && window.brandAPIvars[brandDeasciified];
-    if (!brandVars) {
-        console.error(`No brand vars found for ${brandDeasciified}—check window.brandAPIvars.`);
-        processEl.textContent = 'Missing brand vars—bailing.';
-        return;
-    }
-
-    // await loadSounds();
-
     const res = await fetch("http://localhost:3169/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             brand: brand,
             topic: Inptopic,
-            services: brandVars.services,
-            audience: brandVars.audience,
-            description: brandVars.description,
-            brandKeywords: brandVars.brandKeywords,
+            services: service,
+            audience: audience,
+            description: description,
+            brandKeywords: brandKeywords,
             ai_model: model,
-            langs: langs
+            langs: langs,
+            prompts:prompts
         })
     });
 
@@ -135,13 +128,8 @@ export async function generate(brand, langs, model) {
     }
     console.log(`Job kicked: ${jobId}`);
 
-    // Poll loop—bail on done/error or 30s timeout
     let pollInterval;
-    let timeoutId = setTimeout(() => {
-        clearInterval(pollInterval);
-        processEl.textContent = 'Progress Displayer killed due to reduce backend\' job.';
-        console.error('Poll timeout');
-    }, 1000 * 60 * 20);
+
 
     async function pollProgress() {
         console.log('Poll attempt starting for:', jobId);  // Does this fire?
@@ -157,7 +145,6 @@ export async function generate(brand, langs, model) {
 
             if (progData.status === 'done' && progData.data) {
                 clearInterval(pollInterval);
-                clearTimeout(timeoutId);
                 processEl.textContent = 'Done';
                 // Populate from final data
                 const data = progData.data;
@@ -184,13 +171,36 @@ export async function generate(brand, langs, model) {
                     }
                 });
 
+                let historyLangs = ``;
+                data.langs.forEach(element => {
+                    historyLangs += `
+                        <h4>${element}</h4>
+                        <label>Content</label>
+                        <textarea>${contents[element]}</textarea><br/>
+                        <label>MetaDesc</label>
+                        <textarea>${metaDescs[element]}</textarea><br/>
+                        <label>Keywords</label>
+                        <textarea>${metaKwords[element]}</textarea><br/>
+                    `
+                })
+
+                let historyHTML = `
+                    <div class="historyElement">
+                        <label>${jobId}</label><br/>
+                        <h3>${data.topic}</h3>
+                        <div>${historyLangs}</div>
+                    </div>
+                `
+
+
+                historyBox.insertAdjacentHTML('beforeend', historyHTML)
+
                 // console.log('Subtitles:', subTitles); 
 
                 // playSound()
 
             } else if (progData.status === 'error') {
                 clearInterval(pollInterval);
-                clearTimeout(timeoutId);
                 processEl.textContent = `Error: ${progData.message}`;
 
                 // playSound()
@@ -198,7 +208,6 @@ export async function generate(brand, langs, model) {
         } catch (err) {
             console.error('Poll bombed:', err);
             clearInterval(pollInterval);
-            clearTimeout(timeoutId);
             processEl.textContent = 'Poll connection issue—retry?';
         }
     };
