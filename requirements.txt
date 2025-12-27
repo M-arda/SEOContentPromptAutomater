@@ -3,3 +3,4 @@ ollama
 bs4
 deep_translator
 uvicorn
+aiohttp

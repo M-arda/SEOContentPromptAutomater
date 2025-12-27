@@ -2,24 +2,21 @@ import json
 import time
 import os
 import webbrowser
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi import BackgroundTasks
 from ollama import Client
-import subprocess
 from fastapi.middleware.cors import CORSMiddleware
-import sys
-from OllamaAccountSwitch import get_next_account
-from OllamaAccountSwitch import get_account_count
+from OllamaAccountSwitch import get_next_account, get_account_count
 from uuid import uuid4
 from bs4 import BeautifulSoup
 from deep_translator import GoogleTranslator
 import re
+from vayes_panel_uploader import VayesUploader
 
 try:
-    with open("config.json", "r") as f:
+    with open("config.json", "r",encoding="utf-8") as f:
         CONFIG = json.load(f)
 except FileNotFoundError:
     CONFIG = {"installed_models": ["derin","gpt","qwen"]}
@@ -43,7 +40,10 @@ def get_client(is_first=False):
     api_key = account["api"]
     print(f"API Key Changed -> {account['name']} ({api_key[:15]}...)")
 
-    return Client(headers={'Authorization': f'Bearer {api_key}'})
+    return Client(
+        host='https://ollama.com',
+        headers={'authorization': f'Bearer {api_key}'}
+    )
 
 
 # def ensure_ollama_running():
@@ -230,7 +230,10 @@ def google_translate(input, target_lang, is_HTML):
         'russian': 'ru',
         'french': 'fr',
         'spanish': 'es',
-        'german': 'de'
+        'german': 'de',
+        'italian':'it',
+        'polish':'pl',
+        'portuguese':'pt'
     }
     
     # Normalize to code if full name
@@ -244,18 +247,18 @@ def google_translate(input, target_lang, is_HTML):
     if not is_HTML:
         return translator.translate(input)
     
-
     soup = BeautifulSoup(input, 'html.parser')
     
     # Target elements: p, h2, h3, li (ul skipped as wrapper)
     for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
         has_marker = False
     # Swap span to **bold** marker
-        span = elem.find('span', class_='Renk--Metin-ANTRASIT')
-        if span and span.strong:
-            bold_text = span.strong.get_text(strip=True)
-            span.replace_with(f'**{bold_text}**')
+        spans = elem.find_all('span', class_='Renk--Metin-ANTRASIT')
+        for span in spans:
             has_marker = True
+            if span and span.strong:
+                bold_text = span.strong.get_text(strip=True)
+                span.replace_with(f'<B>{bold_text}</B>')
         
         # Grab full marked text (or plain)
         full_text = elem.get_text(separator=' ', strip=True)
@@ -266,28 +269,30 @@ def google_translate(input, target_lang, is_HTML):
         final_text = full_translated
         if has_marker:
             # Extract translated bold from between **
-            bold_match = re.search(r'\*\*(.*?)\*\*', full_translated)
-            if bold_match:
-                translated_bold = bold_match.group(1).strip()
-                def replace_bold(match):
-                    return f'<span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span>'
-                final_text = re.sub(r'\*\*(.*?)\*\*', replace_bold, full_translated)
+            def replace_bold(match):
+                translated_bold = match.group(1).strip()
+                return f'<span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span>'
+            final_text = re.sub(r'<B>(.*?)</B>', replace_bold, full_translated)
         
         # Nuke and insert
         elem.clear()
         elem.append(final_text)
     
     return str(soup).replace('&lt;','<').replace('&gt;','>')
-    
+
+
 current_brand = ""
-messages = []
+messages = {}
 # client = get_client()
-def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:str) -> str:
+def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:str, topic, jobId) -> str:
     global current_brand, messages, client
     if not current_brand == brand:
         current_brand = brand
-        messages = []
-        messages.append({
+
+
+    if f'{brand}_{topic}_{jobId}' not in messages:
+        messages[f'{brand}_{topic}_{jobId}'] = []
+        messages[f'{brand}_{topic}_{jobId}'].append({
             'role':'system',
             'content':f'{system_prompt}'
         })
@@ -311,7 +316,7 @@ def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:s
 
     idx = 0
     account_counter = 0
-    messages.append({'role':'user','content':f'{prompt}'})
+    messages[f'{brand}_{topic}_{jobId}'].append({'role':'user','content':f'{prompt}'})
     while True:
         try:
             print(f"Generating with -> Model: {model_priority[idx]}, Account : {dict(client._client._headers)['authorization']}")
@@ -319,11 +324,11 @@ def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:s
             
             start = time.time()
             # response = client.generate(model=model_priority[idx], prompt=prompts[generation_type])
-            response = client.chat(model=model_priority[idx],messages=messages)
+            response = client.chat(model=model_priority[idx],messages=messages[f'{brand}_{topic}_{jobId}'])
             elapsed = round(time.time() - start, 2)
             print(f"Completed in {elapsed}s\n")
             print(f"Success with {model_priority[idx]}")
-            messages.append({'role': 'assistant', 'content': response['message']['content']})
+            messages[f'{brand}_{topic}_{jobId}'].append({'role': 'assistant', 'content': response['message']['content']})
             return response['message']['content']
 
         except Exception as e:
@@ -350,6 +355,19 @@ def generate_text(prompt: str, requested_model: str, brand: str, system_prompt:s
     return "|   THIS PROCESS FAILED    |"
 
 def run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description, brand_prompts):
+    topics = {}
+
+    try:
+        topics['english'] = topic
+        for lang in langs:
+            if lang == 'english':
+                continue
+            topics[lang] = google_translate(topic,lang,False)
+    except Exception as e:
+        for lang in langs:
+            topics[lang] = topic
+        print("Google Translator didnt work every topic is English. Manually translate and replace")
+        print(e)
 
     try:
         # Subtitles
@@ -357,12 +375,14 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         update_job(job_id, 'generating', 1, 'Generating subtitles...')
         subtitle_prompt = brand_prompts["subtitle"].format(
             topic=topic, brand_name=brand, brand_audience=audience, brand_description=description)
-        subtitles_response = generate_text(subtitle_prompt, model_name, brand, brand_prompts['system'])
+        subtitles_response = generate_text(subtitle_prompt, model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id)
         print(f"Subtitle Text {subtitles_response}")
 
         titles_raw = [line.strip() for line in subtitles_response.splitlines() if line.strip()]
-        for title in titles_raw:
-            subtitles.append(title.lstrip("*-0123456789. "))
+
+        for raw_title in titles_raw:
+            cleaned = re.sub(r'^\d+[\.\)\-\s]+', '', raw_title).strip()
+            subtitles.append(cleaned.strip())
         update_job(job_id, 'running', 1, f"Got {len(subtitles)} subtitles.")
 
         if not subtitles:
@@ -373,9 +393,9 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         subtitlesHTML = "<h3>Table of Contents</h3><ul>"
         for i, s in enumerate(subtitles):
             print(f"{i}. {s}")
-            subtitlesHTML = subtitlesHTML.replace('%',' percent').replace('—','-')
             subtitlesHTML += f"<li>{subtitles[i]}</li>"
         subtitlesHTML += "</ul>"
+        subtitlesHTML = subtitlesHTML.replace('%',' percent').replace('—','-')
 
         # Meta Keywords
         metaKeywords = {}
@@ -384,7 +404,7 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             PROMPTS_OBSOLETE['metaKeywordPrompt'].format(
                 topic=topic, brand_keywords=brandKeywords, brand_audience=audience, brand_services=services
             ), 
-            model_name, brand, brand_prompts['system']
+            model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id
         )
         
         for lang in langs:
@@ -394,6 +414,8 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         update_job(job_id, 'running', 2, "Meta keywords locked in.")
 
         # Content gen
+        # /../themes/default/assets/images/global/vayes_no_preview.jpg
+
         contents_subtitled = [subtitlesHTML]
         total = len(subtitles)
         update_job(job_id, 'generating', 3, f"Generating {total} content sections...")
@@ -401,10 +423,12 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             print(f"\n[{idx}/{total}] Generating content for subtitle: '{subtitle}'")
             content_prompt = brand_prompts["content"].format(
                 subtitle=subtitle, brand_name=brand,
-                content_keywords=metaKeywords.get("english", []), brand_audience=audience, brand_description=description
+                content_keywords=metaKeywords.get("english", ), brand_audience=audience, brand_description=description
             )
-            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name, brand, brand_prompts['system'])
+            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id)
             content_text = content_text.replace('%',' percent')
+            if idx == 3:
+                content_text += f'<p>&nbsp;</p><img src="/../themes/default/assets/images/global/vayes_no_preview.jpg" alt="{topic}" title="{topic}"/>'
             contents_subtitled.append(content_text)
             sub_step = f'3.{idx}'
             update_job(job_id, 'generating', float(sub_step), f"{idx}/{total} Content '{subtitle}' finished.")
@@ -414,35 +438,39 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
         # Translations
         contents = {}
         update_job(job_id, 'generating', 4, 'Translating content...')
-        if "english" not in langs:
-            contents["english"] = "".join(contents_subtitled)
+
+        contents["english"] = "".join(contents_subtitled)
         for lang in langs:
             if lang == "english":
-                contents["english"] = ""
-                for content_w_subtitle in contents_subtitled:
-                    contents["english"] += content_w_subtitle
-            else:
-                contents[lang] = ""
-                for content_w_subtitle in contents_subtitled:
-                    # translated_subtitled = generate_text(
-                    #     PROMPTS["translationPrompt"].format(lang=lang, content=content_w_subtitle), 
-                    #     model_name
-                    # )
+                continue 
+
+            update_job(job_id, 'translating', 4, f"{lang} translating...")
+            contents[lang] = ""
+            for content_w_subtitle in contents_subtitled:
+                try:
                     translated_subtitled = google_translate(content_w_subtitle, target_lang=lang, is_HTML=True)
-                    translated_subtitled = translated_subtitled.replace('%',f" {google_translate('percent', target_lang=lang, is_HTML=False)}").replace('—','-')
-                    contents[lang] += translated_subtitled
+                except:
+                    print("Something went wrong during translation, manuel translate this part")
+                    translated_subtitled = content_w_subtitle
+                translated_subtitled = translated_subtitled.replace(
+                    '%', f" {google_translate('percent', target_lang=lang, is_HTML=False)}"
+                ).replace('—', '-')
+                contents[lang] += translated_subtitled
             update_job(job_id, 'translating', 4, f"{lang} finished.")
+
         update_job(job_id, 'running', 4, "Translations complete.")
 
         # Meta Descs
         metaDescs = {}
         update_job(job_id, 'generating', 5, 'Building meta descriptions...')
         metaDescription_raw = generate_text(
-            brand_prompts['metaDesc'].format(
+            PROMPTS_OBSOLETE['metaDescPrompt'].format(
+                topic=topic,
                 content=contents.get('english', ''), 
-                brand_audience=audience, content_keywords=metaKeywords.get("english", []), brand_services=services, subtitles=",".join(subtitles)
+                brand_audience=audience, content_keywords=metaKeywords.get("english", []),
+                brand_services=services, subtitles=",".join(subtitles)
             ), 
-            model_name, brand, brand_prompts['system']
+            model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id
         )
         metaDescription_raw = metaDescription_raw.replace('%',' percent').replace('—','-')
         for lang in langs:
@@ -451,13 +479,36 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             metaDescs[lang] = google_translate(metaDescription_raw, target_lang=lang, is_HTML=False)
         update_job(job_id, 'running', 5, "Meta descs ready.")
 
+        messages_log = {}
+        try:
+            with open('messages.json','r',encoding="utf-8") as f:
+                try:
+                    messages_log = json.load(f)
+                except:
+                    messages_log = {}
+                # messages_log = json.load(f)
+        except FileNotFoundError:
+            with open("messages.json", "a"):
+                pass
+        except Exception as e:
+            print(f"Something went wrong {e}")
+        
+
+        if f'{brand}_{topic}_{job_id}' not in messages_log:
+            messages_log[f'{brand}_{topic}_{job_id}'] = messages[f'{brand}_{topic}_{job_id}']
+
+
+        with open(f'messages.json','w',encoding="utf-8") as f:
+            json.dump(messages_log,f,indent=4,ensure_ascii=False)
+
+
         # Final
         final_data = {
             "subtitles": subtitles,
             "contents": contents,
             "metaDescs": metaDescs,
             "metaKeywords": metaKeywords,
-            "topic":topic,
+            "topics":topics,
             "langs":langs
         }
         update_job(job_id, 'done', 5, "Full results ready.", final_data)
@@ -499,11 +550,13 @@ def generate(
     # return run_generation(job_id, brand, topic, langs, ai_model, services, audience, brandKeywords, model_name, description)
     return JSONResponse({"job_id": job_id, "status": "started", "message": "Job queued—polling for updates."})
 
+
+
+
 @app.get("/progress/{job_id}")
 def get_progress(job_id: str):
     job = jobs.get(job_id)
     if not job:
-        # 404 yerine 200 dön + status: "pending" veya "not_started"
         return {
             "status": "pending",
             "step": 0,
@@ -521,6 +574,52 @@ def list_sounds():
     except Exception as e:
         print(f"Sounds list bombed: {e}")
         return JSONResponse(content={"sounds": []}, status_code=500)
+    
+
+uploader_cache = {}
+
+@app.post('/login_to_panel')
+def login_to_panel(body: dict = Body(...)):
+    brand = body.get('brand')
+    url = body.get('url')
+    username = body.get('username')
+    password = body.get('password')
+    if not all([brand, url, username, password]):
+        raise HTTPException(422, detail="Missing required fields")
+    
+    uploader = VayesUploader(base_url=url)
+    success = uploader.login(username, password)
+    if success:
+        uploader_cache[brand] = {'uploader': uploader, 'creds': {'username': username, 'password': password, 'url': url}}
+        return {"status": "logged in", "brand": brand}
+    return {"error": "login flopped—check creds/logs"}
+
+@app.post("/upload")
+def upload_to_panel(body: dict = Body(...)):
+    brand = body.get('brand')
+    post_params = body.get('postParameters')
+    if not brand:
+        raise HTTPException(422, detail="Missing 'brand' in body")
+    
+    try:
+        cached = uploader_cache[brand]
+        uploader = cached['uploader']
+    except KeyError:
+        print(f"Failed to find {brand}—retry login?")
+        return {"error": "No cached uploader—hit /login_to_panel first"}
+
+    if not uploader.logged_in:
+        creds = cached['creds']
+        uploader = VayesUploader(base_url=creds['url'])
+        if not uploader.login(creds['username'], creds['password']):
+            return {"error": "Re-login bombed"}
+        cached['uploader'] = uploader 
+
+    success = uploader.upload_article(**post_params)  # Spreads the nested dict direct
+    if success:
+        return {"status": "uploaded", "brand": brand}
+    return {"error": "Upload failed—peek logs"}
+
 
 # Serve the main index.html at root
 @app.get("/")

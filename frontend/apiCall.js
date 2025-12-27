@@ -59,7 +59,7 @@ function deasciifierNLowerer(str) {
 //         .catch(e => console.log("Audio load/play issue:", e));
 // }
 
-export async function generate(brand, langs, model,service, audience, description,brandKeywords, prompts) {
+export async function generate(brand, langs, model, service, audience, description, brandKeywords, prompts, postParameters) {
     model = "deepseek-v3.1:671b-cloud"
     const brandDeasciified = deasciifierNLowerer(brand);
     const processEl = document.getElementById(`${brandDeasciified}onGoingProcess`);  // Grab for updates
@@ -72,7 +72,7 @@ export async function generate(brand, langs, model,service, audience, descriptio
     const Inptopic = document.querySelector(`#${brandDeasciified}BaslikInp`).value;
 
     // Map content boxes for each language
-    const historyBox = document.querySelector(`#${brandDeasciified}history`)
+    const historyBox = document.querySelector(`#${brandDeasciified}History`)
     const contentBoxMap = {};
     const metaDescBoxMap = {};
     const metaKwsBoxMap = {};
@@ -104,14 +104,14 @@ export async function generate(brand, langs, model,service, audience, descriptio
             brandKeywords: brandKeywords,
             ai_model: model,
             langs: langs,
-            prompts:prompts
+            prompts: prompts
         })
     });
 
     console.log('Generate fetch done, status:', res.status);
 
     if (!res.ok) {
-        const errBody = await res.text(); 
+        const errBody = await res.text();
         console.error(`API start bombed: ${res.status} ${res.statusText} - Body: ${errBody}`);
         processEl.textContent = `Start failed: ${res.status} - ${res.statusText}`;
         return;
@@ -174,6 +174,7 @@ export async function generate(brand, langs, model,service, audience, descriptio
                 let historyLangs = ``;
                 data.langs.forEach(element => {
                     historyLangs += `
+                        <h3>${data.topics[element]}</h3>
                         <h4>${element}</h4>
                         <label>Content</label>
                         <textarea>${contents[element]}</textarea><br/>
@@ -186,13 +187,15 @@ export async function generate(brand, langs, model,service, audience, descriptio
 
                 let historyHTML = `
                     <div class="historyElement">
+                        <label>Be careful with article ID you might wipe off another article keep it 0 unless you know what you are doing:&nbsp;&nbsp;</label>
+                        <input class="articleId" type="number" value="0" disabled><br/>
+                        <button id="${brandDeasciified}upload">Add to panel</button><br/>
                         <label>${jobId}</label><br/>
-                        <h3>${data.topic}</h3>
                         <div>${historyLangs}</div>
                     </div>
                 `
 
-
+                // historyHTML = historyHTML.replace('<div class="historyElement">', `<div class="historyElement" data-post-params='${JSON.stringify(postParameters)}'>`);
                 historyBox.insertAdjacentHTML('beforeend', historyHTML)
 
                 // console.log('Subtitles:', subTitles); 
@@ -215,4 +218,182 @@ export async function generate(brand, langs, model,service, audience, descriptio
     console.log('Interval armed, first poll kicking now');
     pollInterval = setInterval(pollProgress, 1000);
     pollProgress();
+}
+
+
+
+// Call once per-brand in initializer: attachUploadListener(brandNameDeasciified);
+export function attachUploadListener(brandDeasciified, postParameters) {
+    const historyBox = document.querySelector(`#${brandDeasciified}History`);
+    if (!historyBox) {
+        console.error(`History box for ${brandDeasciified} ghosted—listener skipped.`);
+        return;
+    }
+
+    historyBox.addEventListener('click', (e) => {
+        if (!e.target.matches('[id$="upload"]')) return;
+
+        const button = e.target;
+        const historyEl = button.closest('.historyElement');
+        if (!historyEl) return console.error('HistoryEl AWOL—upload bailed.');
+
+        button.disabled = true;
+        button.textContent = 'Uploading...';
+
+        handleUpload(brandDeasciified, historyEl, button, postParameters).catch(err => {
+            console.error('Handler bombed:', err);
+            button.textContent = 'Failed—Try Again?';
+            button.style.backgroundColor = 'red';
+            button.disabled = false;
+        });
+    });
+
+    console.log(`Upload listener armed for ${brandDeasciified} history.`);
+}
+
+
+export async function handleUpload(brandDeasciified, historyEl, button, postParameters) {
+    try {
+        console.log('Static postParams loaded:', postParameters);
+
+        const langSections = historyEl.querySelectorAll('div h4');
+        const langMap = {
+            'turkish': 'tr', 'english': 'en', 'arabic': 'ar', 'russian': 'ru',
+            'french': 'fr', 'spanish': 'es', 'german': 'de', 'italian': 'it',
+            'polish': 'pl', 'portuguese': 'pt'
+        };
+
+        let titles = {};
+
+        langSections.forEach(e =>{
+            let langsTitle = e.previousElementSibling.textContent
+            titles[langMap[e.textContent.toLowerCase()]] = langsTitle
+        })
+
+        langSections.forEach(h4 => {
+            const langTitle = h4.previousElementSibling;
+            // if (!langTitle && !langTitle.tagName.toLowerCase() === 'h3') {
+            //     console.warn(`Skipping h4 after h3 for lang section—topic header?`);
+            //     return;  // Bail on this h4 if prev is h3
+            // }
+
+            const fullLang = h4.textContent.trim().toLowerCase();
+            const isoLang = langMap[fullLang];
+            if (!isoLang) return console.warn(`Unknown lang "${fullLang}"—skipping.`);
+
+            let tAs = [];
+            let sibling = h4.nextElementSibling;
+            while (tAs.length < 3 && sibling) {
+                if (sibling.tagName.toLowerCase() === 'textarea') {
+                    tAs.push(sibling.value || '');
+                }
+                sibling = sibling.nextElementSibling;
+            }
+
+            if (tAs.length < 3) return console.warn(`Only ${tAs.length} textareas for ${fullLang}—structure off?`);
+
+            // Fix: Grab textContent from langTitle (h3 text as title), deascii/slug it for url
+            const titleText = langTitle ? langTitle.textContent.trim() : '';
+            postParameters[`title[${isoLang}]`] = titleText;
+            postParameters[`url[${isoLang}]`] = `change-this-part-${Math.random()}`.replace(/[\.\s]/,'-');
+
+            postParameters[`content[${isoLang}]`] = tAs[0];
+            postParameters[`meta_description[${isoLang}]`] = tAs[1];
+            postParameters[`meta_keywords[${isoLang}]`] = tAs[2];
+            console.log(`Slurped ${isoLang}: title="${titleText.substring(0, 50)}...", content=${tAs[0].substring(0, 50)}...`);
+        });
+
+        // Now send it—POST {brand, postParameters} as JSON body
+        if (Object.keys(postParameters).length === 0) throw new Error('Empty postParameters—nothing to upload.');
+
+        const payload = {
+            brand: brandDeasciified,
+            postParameters  // Backend unpacks this dict
+        };
+
+        console.log('Full payload pre-send:', payload);
+
+        const uploadRes = await fetch('/upload', {  // Or full localhost:3169 if cross-origin
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!uploadRes.ok) {
+            const errBody = await uploadRes.text();
+            throw new Error(`Upload crapped: ${uploadRes.status} - ${errBody}`);
+        }
+
+        const uploadData = await uploadRes.json();
+        console.log('Upload locked in:', uploadData);
+        button.textContent = 'Uploaded!';
+        button.style.backgroundColor = 'green';
+
+    } catch (err) {
+        console.error('Upload derailed:', err);
+        button.textContent = 'Failed—Try Again?';
+        button.style.backgroundColor = 'red';
+    } finally {
+        button.disabled = false;
+    }
+}
+
+export async function loginToPanel(brand, url) {
+    const loginBtn = document.querySelector(`#${brand}LoginBtn`);
+    const usernameInp = document.querySelector(`#${brand}UsernameInp`);
+    const passwordInp = document.querySelector(`#${brand}PasswordInp`);
+
+    if (!loginBtn || !usernameInp || !passwordInp) {
+        console.error(`Inputs MIA for ${brand}—check IDs.`);
+        return { success: false, error: 'UI elements missing' };
+    }
+
+    const username = usernameInp.value.trim();
+    const password = passwordInp.value.trim();
+
+    if (!username || !password) {
+        console.warn('Empty creds—skipping POST.');
+        return { success: false, error: 'Username/password required' };
+    }
+
+    // Quick UI lock
+    const originalText = loginBtn.textContent;
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Logging in...';
+
+    try {
+        const loginRes = await fetch("http://localhost:3169/login_to_panel", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                brand: brand,
+                url: url,
+                username: username,
+                password: password
+            })
+        });
+
+        const loginData = await loginRes.json();
+        console.log(loginData)
+
+        if (loginRes.ok && loginData.status === 'logged in') {
+            console.log(`Login nailed for ${brand}:`, loginData);
+            loginBtn.textContent = 'Logged!';  // Or hide/re-enable for re-try
+            loginBtn.style.backgroundColor = 'green';
+            return { success: true, data: loginData };
+        } else {
+            const errorMsg = loginData.error || `Server said no: ${loginRes.status}`;
+            console.error(`Login flopped for ${brand}:`, errorMsg);
+            alert(`Login failed: ${errorMsg}`);
+            return { success: false, error: errorMsg };
+        }
+    } catch (err) {
+        console.error(`Network/login bomb for ${brand}:`, err);
+        alert('Connection issue—check localhost:3169?');
+        return { success: false, error: err.message };
+    } finally {
+        loginBtn.disabled = false;
+        // loginBtn.textContent = originalText;
+        loginBtn.style.backgroundColor = '';
+    }
 }

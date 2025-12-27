@@ -28,7 +28,7 @@ function brandObjectifier() {
     let brandObject = {
         "name": brandNameInp.value,
         "langs": []
-    }   
+    }
 
     brandLangs.forEach(element => {
         brandObject.langs.push(element);
@@ -80,16 +80,16 @@ function brandJson() {
     reader.readAsText(file);
 }
 
-function getPrompts(brand){
+function getPrompts(brand) {
     let systemBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
     let subtitleBox = document.querySelector(`#${brand}prompts .subtitle.promptBox textarea`)
     let contentBox = document.querySelector(`#${brand}prompts .content.promptBox textarea`)
     let metaDescBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
     return {
-        "system":`${systemBox.value}`,
-        "subtitle":`${subtitleBox.value}`,
-        "content":`${contentBox.value}`,
-        "metaDesc":`${metaDescBox.value}`,
+        "system": `${systemBox.value}`,
+        "subtitle": `${subtitleBox.value}`,
+        "content": `${contentBox.value}`,
+        "metaDesc": `${metaDescBox.value}`,
     }
 }
 
@@ -127,6 +127,9 @@ function addBrand(brandObj) {
 
     let brandBody = `<div id="${brandNameDeasciified}" class="tabcontent">
         <h2>${brandObject.name}</h2>
+        <label>Username: </label><input id="${brandNameDeasciified}UsernameInp"><br/>
+        <label>Password: </label><input id="${brandNameDeasciified}PasswordInp"><br/>
+        <label>Login: </label><button id="${brandNameDeasciified}LoginBtn">Login</button><br/><br/><br/>
         <label>Başlık</label>
         <input type="text" id="${brandNameDeasciified}BaslikInp"><br>
         <button class="sendAI" marka="${brandNameDeasciified}" id="${brandNameDeasciified}SendAI">AI'a Gönder</button><br>
@@ -138,13 +141,38 @@ function addBrand(brandObj) {
             <div class="content promptBox"><h4>Content Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.content}</textarea></div>
             <div class="metaDesc promptBox"><h4>MetaDesc Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.metaDesc}</textarea></div>
         </div>
-        <div id="${brandNameDeasciified}history">
+        <div id="${brandNameDeasciified}History">
             <h3>History</h3>
         </div>
         </div>`
 
 
     brandHub.insertAdjacentHTML('beforeend', brandBody)
+    API.attachUploadListener(brandNameDeasciified, brandObject.postParameters)
+
+    const loginBtn = document.getElementById(`${brandNameDeasciified}LoginBtn`);
+    if (loginBtn) {
+        if (!brandObject.url) {
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'No CMS Setup';
+            loginBtn.title = 'This brand skips auto-uploads—handle manual.';
+            console.log(`Skipped login for ${brandNameDeasciified}: No Vayes URL.`);
+        } else {
+            loginBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                const result = await API.loginToPanel(brandNameDeasciified, brandObject.url);
+                if (result.success) {
+                    loginBtn.textContent = 'Logged In!';
+                    loginBtn.style.backgroundColor = 'green';
+                } else {
+                    alert(`Login flop: ${result.error}`);
+                    loginBtn.style.backgroundColor = 'red';
+                }
+            });
+        }
+    } else {
+        console.error(`Login btn MIA for ${brandNameDeasciified}—check ID.`);
+    }
 
     brandHub.addEventListener('click', (e) => {
         if (e.target.classList.contains('copyBtn')) {
@@ -165,8 +193,10 @@ function addBrand(brandObj) {
         }
     });
 
+    // console.log("Post parameters",JSON.stringify(brandObject.postParameters))
+
     let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
-    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs,undefined, brandObject.services, brandObject.audience, brandObject.description,brandObject.keywords, getPrompts(brandNameDeasciified)));
+    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs, undefined, brandObject.services, brandObject.audience, brandObject.description, brandObject.keywords, getPrompts(brandNameDeasciified), brandObject.postParameters));
 }
 
 // EventListeners
