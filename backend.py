@@ -207,7 +207,7 @@ Strict Rules:
 
 Extract the most relevant terms directly from {topic}, then naturally blend in {brand_keywords} and {brand_services} for maximum search relevance.
 Produce exactly 5–10 powerful keywords/phrases: include a mix of head terms, long-tail phrases focused on {brand_audience} pain points/benefits, and action-oriented terms tied to {brand_services}.
-Keep the list under 200 characters total (count every letter, comma, and space; verify the exact count internally before finalizing—target 120-180 chars for safety).
+Keep the list strictly under 150 characters total (count every letter, comma, and space; target 80-130 chars for safety).
 Format as a plain comma-separated string with NO quotes, brackets, or extra punctuation.
 Output just the one English list. Absolutely NO labels, numbering, explanations, line breaks, or any other text.
 
@@ -425,10 +425,10 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
                 subtitle=subtitle, brand_name=brand,
                 content_keywords=metaKeywords.get("english", ), brand_audience=audience, brand_description=description
             )
-            content_text = f"<p>&nbsp;</p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id)
+            content_text = f"<p></p><h2>{subtitle}</h2>" + generate_text(content_prompt, model_name, brand, brand_prompts['system'], topic=topic, jobId=job_id)
             content_text = content_text.replace('%',' percent')
             if idx == 3:
-                content_text += f'<p>&nbsp;</p><img src="/../themes/default/assets/images/global/vayes_no_preview.jpg" alt="{topic}" title="{topic}"/>'
+                content_text += f'<p></p><img src="/../themes/default/assets/images/global/vayes_no_preview.jpg" alt="{topic}" title="{topic}"/>'
             contents_subtitled.append(content_text)
             sub_step = f'3.{idx}'
             update_job(job_id, 'generating', float(sub_step), f"{idx}/{total} Content '{subtitle}' finished.")
@@ -615,6 +615,8 @@ def upload_to_panel(body: dict = Body(...)):
             return {"error": "Re-login bombed"}
         cached['uploader'] = uploader 
 
+
+    print(post_params)
     success = uploader.upload_article(**post_params)  # Spreads the nested dict direct
     if success:
         return {"status": "uploaded", "brand": brand}

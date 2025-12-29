@@ -103,6 +103,7 @@
                 <input type="file" id="markaEkleJsonInp" accept=".json">
             </div>
             <button id="markaJSONlaEkleyenButon">JSON ile ekle</button>
+            <p>Sunucuyu kapatmadığınız sürece konsola <pre>const API = import('./frontend/apiCall.js')</pre>ardından <pre>API.restore_from_jobId(job_Id)</pre> şeklinde yazarsanız kaybettiğiniz yazıları geri getirebilirsiniz</p>
         </div>
 
         <!-- <div id="imamoglu" class="tabcontent">
@@ -160,6 +161,14 @@
 
     // Get the element with id="defaultOpen" and click on it
     document.getElementById("defaultOpen").click(); 
+
+    function updateLabel(ta) {
+    const label = ta.previousElementSibling;
+    if (label && label.tagName === 'LABEL') {
+        const baseText = label.textContent.replace(/\s*\d*$/, '');
+        label.textContent = baseText + ta.value.length;
+    }
+}
 </script>
 
 

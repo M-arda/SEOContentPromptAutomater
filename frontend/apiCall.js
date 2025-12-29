@@ -59,6 +59,58 @@ function deasciifierNLowerer(str) {
 //         .catch(e => console.log("Audio load/play issue:", e));
 // }
 
+
+
+export async function restore_from_jobId(job_Id) {
+    try {
+        const progRes = await fetch(`http://localhost:3169/progress/${job_Id}`);
+        console.log('Progress fetch status:', progRes.status);  // 200 or bust?
+        if (!progRes.ok) throw new Error(`Progress fetch: ${progRes.status}`);
+        const progData = await progRes.json();
+        console.log('Progress data:', progData);  // Full guts
+
+        if (progData.status === 'done' && progData.data) {
+            // Populate from final data
+            const data = progData.data;
+            let contents = data.contents;
+            let metaDescs = data.metaDescs;
+            let metaKwords = data.metaKeywords;
+            let subTitles = data.subtitles;
+            let langs = data.langs;
+
+            let restore_body = "";
+
+            langs.forEach(lang => {
+                restore_body += `
+                    <div>
+                        <h5>${lang}</h5>
+                        <label>Content:</label><textarea>${contents[lang]}</textarea><br/>
+                        <label>MetaDescs:</label><textarea>${contents[lang]}</textarea><br/>
+                        <label>MetaKwords:</label><textarea>${contents[lang]}</textarea><br/>
+                    </div>
+                `
+            });
+
+            let restore = `<div>
+                ${restore_body}
+            </div>`
+
+            document.querySelector('#Home').insertAdjacentHTML('beforeend',restore)
+
+        } else if (progData.status === 'error') {
+            console.log("Something went wrong",progData.message)
+
+            // playSound()
+        }
+    } catch (err) {
+        console.error('Poll bombed:', err);
+        clearInterval(pollInterval);
+        processEl.textContent = 'Poll connection issue—retry?';
+    }
+}
+
+
+
 export async function generate(brand, langs, model, service, audience, description, brandKeywords, prompts, postParameters) {
     model = "deepseek-v3.1:671b-cloud"
     const brandDeasciified = deasciifierNLowerer(brand);
@@ -176,12 +228,12 @@ export async function generate(brand, langs, model, service, audience, descripti
                     historyLangs += `
                         <h3>${data.topics[element]}</h3>
                         <h4>${element}</h4>
-                        <label>Content</label>
-                        <textarea>${contents[element]}</textarea><br/>
-                        <label>MetaDesc</label>
-                        <textarea>${metaDescs[element]}</textarea><br/>
-                        <label>Keywords</label>
-                        <textarea>${metaKwords[element]}</textarea><br/>
+                        <label>Content: </label>
+                        <textarea oninput="updateLabel(this)">${contents[element]}</textarea><br/>
+                        <label>MetaDesc: </label>
+                        <textarea oninput="updateLabel(this)">${metaDescs[element]}</textarea><br/>
+                        <label>Keywords :</label>
+                        <textarea oninput="updateLabel(this)">${metaKwords[element]}</textarea><br/>
                     `
                 })
 
@@ -252,6 +304,34 @@ export function attachUploadListener(brandDeasciified, postParameters) {
 }
 
 
+function temizleObj(obj) {
+    if (typeof obj === 'string') {
+        let cleaned = obj.replace(/\n/g, ' ');
+
+        cleaned = obj.replace(/\s+/g, ' ');
+
+        cleaned = obj.replace(/\\/g, ' ');
+
+        return cleaned.trim();
+    }
+
+    if (Array.isArray(obj)) {
+        return obj.map(temizleObj)
+    }
+
+    if (obj && typeof obj === 'object') {
+        const yeniObj = {};
+        for (const key in obj) {
+            yeniObj[key] = temizleObj(obj[key])
+        }
+
+        return yeniObj
+    }
+
+    return obj
+}
+
+
 export async function handleUpload(brandDeasciified, historyEl, button, postParameters) {
     try {
         console.log('Static postParams loaded:', postParameters);
@@ -265,7 +345,7 @@ export async function handleUpload(brandDeasciified, historyEl, button, postPara
 
         let titles = {};
 
-        langSections.forEach(e =>{
+        langSections.forEach(e => {
             let langsTitle = e.previousElementSibling.textContent
             titles[langMap[e.textContent.toLowerCase()]] = langsTitle
         })
@@ -295,7 +375,7 @@ export async function handleUpload(brandDeasciified, historyEl, button, postPara
             // Fix: Grab textContent from langTitle (h3 text as title), deascii/slug it for url
             const titleText = langTitle ? langTitle.textContent.trim() : '';
             postParameters[`title[${isoLang}]`] = titleText;
-            postParameters[`url[${isoLang}]`] = `change-this-part-${Math.random()}`.replace(/[\.\s]/,'-');
+            postParameters[`url[${isoLang}]`] = `change-this-part-${Math.random()}`.replace(/[\.\s]/, '-');
 
             postParameters[`content[${isoLang}]`] = tAs[0];
             postParameters[`meta_description[${isoLang}]`] = tAs[1];
@@ -311,12 +391,14 @@ export async function handleUpload(brandDeasciified, historyEl, button, postPara
             postParameters  // Backend unpacks this dict
         };
 
+        let cleanedPayload = temizleObj(payload)
+
         console.log('Full payload pre-send:', payload);
 
         const uploadRes = await fetch('/upload', {  // Or full localhost:3169 if cross-origin
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(cleanedPayload)
         });
 
         if (!uploadRes.ok) {
