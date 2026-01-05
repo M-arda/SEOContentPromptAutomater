@@ -95,10 +95,10 @@ export async function restore_from_jobId(job_Id) {
                 ${restore_body}
             </div>`
 
-            document.querySelector('#Home').insertAdjacentHTML('beforeend',restore)
+            document.querySelector('#Home').insertAdjacentHTML('beforeend', restore)
 
         } else if (progData.status === 'error') {
-            console.log("Something went wrong",progData.message)
+            console.log("Something went wrong", progData.message)
 
             // playSound()
         }
@@ -229,11 +229,11 @@ export async function generate(brand, langs, model, service, audience, descripti
                         <h3>${data.topics[element]}</h3>
                         <h4>${element}</h4>
                         <label>Content: </label>
-                        <textarea oninput="updateLabel(this)">${contents[element]}</textarea><br/>
+                        <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${contents[element]}</textarea><br/>
                         <label>MetaDesc: </label>
-                        <textarea oninput="updateLabel(this)">${metaDescs[element]}</textarea><br/>
+                        <textarea onload="updateLabel(this)"  oninput="updateLabel(this)">${metaDescs[element]}</textarea><br/>
                         <label>Keywords :</label>
-                        <textarea oninput="updateLabel(this)">${metaKwords[element]}</textarea><br/>
+                        <textarea onload="updateLabel(this)"  oninput="updateLabel(this)">${metaKwords[element]}</textarea><br/>
                     `
                 })
 
@@ -249,6 +249,9 @@ export async function generate(brand, langs, model, service, audience, descripti
 
                 // historyHTML = historyHTML.replace('<div class="historyElement">', `<div class="historyElement" data-post-params='${JSON.stringify(postParameters)}'>`);
                 historyBox.insertAdjacentHTML('beforeend', historyHTML)
+
+                historyBox.querySelectorAll('.historyElement textarea').forEach(textarea => updateLabel(textarea));
+
 
                 // console.log('Subtitles:', subTitles); 
 

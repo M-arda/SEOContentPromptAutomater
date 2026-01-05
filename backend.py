@@ -242,43 +242,47 @@ def google_translate(input, target_lang, is_HTML):
     else:
         return "Requested language not found in lang_map"
     
-    translator = GoogleTranslator(source='en', target=target_lang)
+    try:
 
-    if not is_HTML:
-        return translator.translate(input)
-    
-    soup = BeautifulSoup(input, 'html.parser')
-    
-    # Target elements: p, h2, h3, li (ul skipped as wrapper)
-    for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
-        has_marker = False
-    # Swap span to **bold** marker
-        spans = elem.find_all('span', class_='Renk--Metin-ANTRASIT')
-        for span in spans:
-            has_marker = True
-            if span and span.strong:
-                bold_text = span.strong.get_text(strip=True)
-                span.replace_with(f'<B>{bold_text}</B>')
+        translator = GoogleTranslator(source='en', target=target_lang)
+
+        if not is_HTML:
+            return translator.translate(input)
         
-        # Grab full marked text (or plain)
-        full_text = elem.get_text(separator=' ', strip=True)
+        soup = BeautifulSoup(input, 'html.parser')
         
-        # Always translate full (context for all)
-        full_translated = translator.translate(full_text)
-    
-        final_text = full_translated
-        if has_marker:
-            # Extract translated bold from between **
-            def replace_bold(match):
-                translated_bold = match.group(1).strip()
-                return f'<span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span>'
-            final_text = re.sub(r'<B>(.*?)</B>', replace_bold, full_translated)
+        # Target elements: p, h2, h3, li (ul skipped as wrapper)
+        for elem in soup.find_all(['p', 'h2', 'h3', 'li']):
+            has_marker = False
+        # Swap span to **bold** marker
+            spans = elem.find_all('span', class_='Renk--Metin-ANTRASIT')
+            for span in spans:
+                has_marker = True
+                if span and span.strong:
+                    bold_text = span.strong.get_text(strip=True)
+                    span.replace_with(f'<B>{bold_text}</B>')
+            
+            # Grab full marked text (or plain)
+            full_text = elem.get_text(separator=' ', strip=True)
+            
+            # Always translate full (context for all)
+            full_translated = translator.translate(full_text)
         
-        # Nuke and insert
-        elem.clear()
-        elem.append(final_text)
-    
-    return str(soup).replace('&lt;','<').replace('&gt;','>')
+            final_text = full_translated
+            if has_marker:
+                # Extract translated bold from between **
+                def replace_bold(match):
+                    translated_bold = match.group(1).strip()
+                    return f'<span class="Renk--Metin-ANTRASIT"><strong>{translated_bold}</strong></span>'
+                final_text = re.sub(r'<B>(.*?)</B>', replace_bold, full_translated)
+            
+            # Nuke and insert
+            elem.clear()
+            elem.append(final_text)
+        
+        return str(soup).replace('&lt;','<').replace('&gt;','>')
+    except:
+        return input
 
 
 current_brand = ""
@@ -447,6 +451,8 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
             update_job(job_id, 'translating', 4, f"{lang} translating...")
             contents[lang] = ""
             for content_w_subtitle in contents_subtitled:
+                
+                ### Google Translate
                 try:
                     translated_subtitled = google_translate(content_w_subtitle, target_lang=lang, is_HTML=True)
                 except:
@@ -456,6 +462,19 @@ def run_generation(job_id, brand, topic, langs, ai_model, services, audience, br
                     '%', f" {google_translate('percent', target_lang=lang, is_HTML=False)}"
                 ).replace('—', '-')
                 contents[lang] += translated_subtitled
+
+                ### AI Translate
+                # try:
+                #     translated_subtitled = generate_text(PROMPTS_OBSOLETE["translationPrompt"].format(
+                #         lang=lang, content=content_w_subtitle
+                #     ), model_name, brand, brand_prompts["system"], topic, job_id)
+                # except:
+                #     print("Something went wrong during translation english keeping english version")
+                #     translated_subtitled= content_w_subtitle
+                # translated_subtitled = translated_subtitled.replace('%', "").replace('—', '-')
+                # contents[lang] += translated_subtitled
+
+
             update_job(job_id, 'translating', 4, f"{lang} finished.")
 
         update_job(job_id, 'running', 4, "Translations complete.")
@@ -535,7 +554,7 @@ def generate(
     brandKeywords: str = Body(..., embed=True),
     description: str = Body(...,embed=True),
     prompts: dict = Body(...,embed=True),
-    background_tasks: BackgroundTasks = None
+    background_tasks: BackgroundTasks = None  # type: ignore
 ):
     job_id = str(uuid4())
     jobs[job_id] = {'status': 'started', 'step': 0, 'message': 'Kicking off...', 'data': None}
@@ -617,7 +636,7 @@ def upload_to_panel(body: dict = Body(...)):
 
 
     print(post_params)
-    success = uploader.upload_article(**post_params)  # Spreads the nested dict direct
+    success = uploader.upload_article(**post_params) # type: ignore  # Spreads the nested dict direct
     if success:
         return {"status": "uploaded", "brand": brand}
     return {"error": "Upload failed—peek logs"}
