@@ -3,3 +3,4 @@ __pycache__/
 messages.json
 log/
 .env
+output/
