@@ -272,6 +272,9 @@ export async function generate(brand, langs, model, service, audience, descripti
 
                         let historyLangs = ``;
                         (data.langs || []).forEach(element => {
+                            let splittedKeywords = metaKwords[element].split(',').slice(0,5);
+
+                            let metaKwordsForHistoty = splittedKeywords.join(", ");
                             historyLangs += `
                                 <h3>${data.topics?.[element] || topic}</h3>
                                 <h4>${element}</h4>
@@ -280,7 +283,7 @@ export async function generate(brand, langs, model, service, audience, descripti
                                 <label>MetaDesc: </label>
                                 <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${metaDescs[element] || ''}</textarea><br/>
                                 <label>Keywords :</label>
-                                <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${metaKwords[element] || ''}</textarea><br/>
+                                <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${metaKwordsForHistoty || ''}</textarea><br/>
                             `;
                         });
 
