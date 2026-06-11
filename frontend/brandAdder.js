@@ -84,12 +84,10 @@ function getPrompts(brand) {
     let systemBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
     let subtitleBox = document.querySelector(`#${brand}prompts .subtitle.promptBox textarea`)
     let contentBox = document.querySelector(`#${brand}prompts .content.promptBox textarea`)
-    let metaDescBox = document.querySelector(`#${brand}prompts .system.promptBox textarea`)
     return {
         "system": `${systemBox.value}`,
         "subtitle": `${subtitleBox.value}`,
         "content": `${contentBox.value}`,
-        "metaDesc": `${metaDescBox.value}`,
     }
 }
 
@@ -110,7 +108,7 @@ function addBrand(brandObj) {
     let brandBodyLangs = '';
     brandObject.langs.forEach(element => {
         brandBodyLangs += `<div id="${brandNameDeasciified}${deasciifierNLowerer(element)}">
-            <h3>${element}</h3>
+            <h3>${element}</h3><br>
             <div>
                 <label>İçerik(HTML)</label>
                 <div class="contentBox"></div>
@@ -119,7 +117,7 @@ function addBrand(brandObj) {
                 <div class="metaDescBox"></div>
                 <button class="copyBtn" data-box="metaDescBox">Copy</button><br/>
                 <label>Meta Keywords</label>
-                <div class="metaKwBox" class="metaKwBox"></div>
+                <div class="metaKwBox"></div>
                 <button class="copyBtn" data-box="metaKwBox">Copy</button><br/>
             </div>
         </div>`
@@ -127,11 +125,13 @@ function addBrand(brandObj) {
 
     let brandBody = `<div id="${brandNameDeasciified}" class="tabcontent">
         <h2>${brandObject.name}</h2>
+        <button class="logHistory"id="${brandNameDeasciified}LogBtn" data-brand="${brandNameDeasciified}">Log the History</button><br>
+            <p id="${brandNameDeasciified}logMB"></p>
         <label>Username: </label><input id="${brandNameDeasciified}UsernameInp"><br/>
         <label>Password: </label><input id="${brandNameDeasciified}PasswordInp"><br/>
         <label>Login: </label><button id="${brandNameDeasciified}LoginBtn">Login</button><br/><br/><br/>
         <label>Başlık</label>
-        <input type="text" id="${brandNameDeasciified}BaslikInp"><br>
+        <textarea type="text" id="${brandNameDeasciified}BaslikInp"></textarea><br>
         <button class="sendAI" marka="${brandNameDeasciified}" id="${brandNameDeasciified}SendAI">AI'a Gönder</button><br>
         <p id="${brandNameDeasciified}onGoingProcess">Waiting</p>
         ${brandBodyLangs}
@@ -139,8 +139,9 @@ function addBrand(brandObj) {
             <div class="system promptBox"><h4>System Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.system}</textarea></div>
             <div class="subtitle promptBox"><h4>Subtitle Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.subtitle}</textarea></div>
             <div class="content promptBox"><h4>Content Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.content}</textarea></div>
-            <div class="metaDesc promptBox"><h4>MetaDesc Prompt</h4><br/><textarea spellcheck="false">${brandObject.PROMPTS.metaDesc}</textarea></div>
         </div>
+        <input type="file" id="${brandNameDeasciified}historyHTML" accept=".html"><br>
+        <!--<button class="historyAdder" data-brand="${brandNameDeasciified}">Add to history</button><br>-->
         <div id="${brandNameDeasciified}History">
             <h3>History</h3>
         </div>
@@ -174,7 +175,14 @@ function addBrand(brandObj) {
         console.error(`Login btn MIA for ${brandNameDeasciified}—check ID.`);
     }
 
-    brandHub.addEventListener('click', (e) => {
+    // console.log("Post parameters",JSON.stringify(brandObject.postParameters))
+
+    let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
+    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs, undefined, brandObject.services, brandObject.audience, brandObject.description, brandObject.keywords, getPrompts(brandNameDeasciified), brandObject.postParameters, brandObject.imagePth));
+}
+
+
+brandHub.addEventListener('click', (e) => {
         if (e.target.classList.contains('copyBtn')) {
             const box = e.target.previousElementSibling;  // Grabs the <div class="...Box">
             if (box && box.textContent) {
@@ -191,13 +199,35 @@ function addBrand(brandObj) {
                 }).catch(err => console.error('Clipboard fail:', err));  // User denied perms?
             }
         }
+
+
+    // Log history buttons
+        if (e.target.classList.contains('logHistory')) {
+
+            const brand = e.target.dataset.brand;
+
+            API.logTheHistory(brand);
+        }
+
+        if(e.target.classList.contains('historyAdder')){
+            htmlFileInp = document.querySelector(`#${brandNameDeasciified}historyHTML`);
+        }
     });
 
-    // console.log("Post parameters",JSON.stringify(brandObject.postParameters))
+brandHub.addEventListener('change', async (e) => {
+    if (!e.target.matches('input[type="file"][id$="historyHTML"]')) return;
 
-    let sendAIBtn = document.getElementById(`${brandNameDeasciified}SendAI`);
-    sendAIBtn.addEventListener('click', () => API.generate(brandObject.name, brandObject.langs, undefined, brandObject.services, brandObject.audience, brandObject.description, brandObject.keywords, getPrompts(brandNameDeasciified), brandObject.postParameters));
-}
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const brand = e.target.id.replace('historyHTML', '');
+    const html = await file.text();
+
+    const historyBox = document.querySelector(`#${brand}History`);
+    if (!historyBox) return;
+
+    historyBox.insertAdjacentHTML('beforeend', html);
+});
 
 // EventListeners
 

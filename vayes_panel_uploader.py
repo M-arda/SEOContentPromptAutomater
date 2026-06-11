@@ -4,12 +4,12 @@ from urllib3.util.retry import Retry
 
 class VayesUploader:
     def __init__(self, base_url, warm_session=True):
-        self.base_url = base_url.rstrip("/").replace("www.", "")  # Force non-www canonical
+        self.base_url = base_url
         self.session = requests.Session()
         
         retry_strategy = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
         adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("https://", adapter)
+        # self.session.mount("https://", adapter)
         
         # Full header stack to match your dump—browser-like AF
         self.session.headers.update({
@@ -30,6 +30,13 @@ class VayesUploader:
             "Priority": "u=0, i",
             "Connection": "keep-alive",  # requests sets this anyway, but explicit
         })
+
+        # self.session.proxies = {
+        #     "http": "http://127.0.0.1:8080",
+        #     "https": "https://127.0.0.1:8080"
+        # }
+        # self.session.verify = False
+
         
         # self.session.verify = False #### REMOVE LATER
         self.session_id = None
@@ -164,8 +171,8 @@ class VayesUploader:
 
 
 if __name__ == "__main__":
-    uploader = VayesUploader(base_url="https://mobilapp.vayes.com.tr")
-    success = uploader.login(username="arda_durak", password="YWDCHMUIH9wiXvcb")
+    uploader = VayesUploader(base_url="https://www.meldaozekinci.com")
+    success = uploader.login(username="arda_durak", password="zk9TSePJIWiSdlv7")
     print(f"Login: {success}, Session ID: {uploader.session_id}...")
 
     # uploadSomePost = uploader.upload_article(
@@ -205,47 +212,55 @@ if __name__ == "__main__":
 
 
     example_data = {
-        "id_article": 0,
-        "id_page": 6,
-        "price": "",
-        "title[tr]": "Arda blog post deneme 7",
-        "subtitle[tr]": "",
-        "url[tr]": "test-arda-blog-post-deneme-7",
-        "meta_title[tr]": "",
-        "summary[tr]": "",
-        "content[tr]": "<h3>içindekiler 7</h3><ul><li>test html</li><li>test html7</li></ul><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi utx<span class=\"Renk--Metin-Antrasit\"><strong> aliquip ex ea commodo</strong> </span>consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
-        "videolar[tr]": "",
-        "schema-soru[tr]": "",
-        "schema-cevap[tr]": "",
-        "title[en]": "Arda blog post deneme 7",
-        "subtitle[en]": "",
-        "url[en]": "arda-blog-post-deneme-7",
-        "meta_title[en]": "",
-        "summary[en]": "",
-        "content[en]": "<h3>içindekiler 7</h3><ul><li>test html</li><li>test html4</li></ul><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi utx<span class=\"Renk--Metin-Antrasit\"><strong> aliquip ex ea commodo</strong> </span>consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>",
-        "videolar[en]": "",
-        "schema-soru[en]": "",
-        "schema-cevap[en]": "",
-        "submit": "Kaydet",
-        "base_image": "",
-        "logical_date": "",
-        "publish_on": "",
-        "publish_off": "",
-        "meta_description[tr]":  "meta desc test",
-        "meta_keywords[tr]": "meta,keywords,türkçe",
-        "meta_description[en]":  "a meta desc",
-        "meta_keywords[en]": "meta,keywords,english",
-        "ordering": "",
-        "is_indexed": 1,
-    }
+            "id_article": "0",
+            "id_page": "6",
+            "price": "",
+            "title[tr]": "test title for turkish",
+            "subtitle[tr]": "",
+            "url[tr]": "test-title-for-turkish",
+            "meta_title[tr]": "",
+            "summary[tr]": "",
+            "content[tr]": "",
+            "videolar[tr]": "",
+            "schema-soru[tr]": "",
+            "schema-cevap[tr]": "",
+            "title[en]": "test title for eglish",
+            "subtitle[en]": "",
+            "url[en]": "test-title-for-eglish",
+            "meta_title[en]": "",
+            "summary[en]": "",
+            "content[en]": "",
+            "videolar[en]": "",
+            "schema-soru[en]": "",
+            "schema-cevap[en]": "",
+            "title[ru]": "test title for russian",
+            "subtitle[ru]": "",
+            "url[ru]": "test-title-for-russian",
+            "meta_title[ru]": "",
+            "summary[ru]": "",
+            "content[ru]": "",
+            "videolar[ru]": "",
+            "schema-soru[ru]": "",
+            "schema-cevap[ru]": "",
+            "submit": "Kaydet",
+            "base_image": "",
+            "logical_date": "",
+            "publish_on": "",
+            "publish_off": "",
+            "meta_description[tr]": "",
+            "meta_keywords[tr]": "",
+            "meta_description[en]": "",
+            "meta_keywords[en]": "",
+            "meta_description[ru]": "",
+            "meta_keywords[ru]": "",
+            "ordering": "",
+            "online[tr]":"0",
+            "online[en]":"0",
+            "online[ru]":"0"
+        }
+
 
     
     uploadAPost = uploader.upload_article(**example_data)
 
     print(f"Done:{uploadAPost}")
-
-"""
-What is Laser Wrinkle Treatment? How is it done?
-What is Laser Skin Rejuvenation? How is it done?
-Tattoo Removal Treatment and Prices
-"""

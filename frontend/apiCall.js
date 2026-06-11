@@ -1,6 +1,3 @@
-
-
-
 function deasciifierNLowerer(str) {
     const charMap = {
         'Ğ': 'g', 'Ü': 'u', 'Ş': 's', 'İ': 'i', 'Ö': 'o', 'Ç': 'c', 'ı': 'i',
@@ -59,11 +56,43 @@ function deasciifierNLowerer(str) {
 //         .catch(e => console.log("Audio load/play issue:", e));
 // }
 
+export async function logTheHistory(brand) {
+    const historyHTML = document.querySelector(`#${brand}History`).innerHTML;
+    const logMessageBox = document.querySelector(`#${brand}logMB`);
+
+    const now = new Date();
+
+    const formattedDate =
+        now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + '-' +
+        String(now.getHours()).padStart(2, '0') + '-' +
+        String(now.getMinutes()).padStart(2, '0');
+
+    const res = await fetch('http://localhost:3270/log_history',{
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                html:historyHTML,
+                brand:brand,
+                date:formattedDate
+            })
+    })
+
+    if (res.status == "ok"){
+        logMessageBox.innerHTML = "OK"
+    }
+    else{
+        logMessageBox.innerHTML = res.status
+        console.log(res)
+    }
+}
+
 
 
 export async function restore_from_jobId(job_Id) {
     try {
-        const progRes = await fetch(`http://localhost:3169/progress/${job_Id}`);
+        const progRes = await fetch(`http://localhost:3270/progress/${job_Id}`);
         console.log('Progress fetch status:', progRes.status);  // 200 or bust?
         if (!progRes.ok) throw new Error(`Progress fetch: ${progRes.status}`);
         const progData = await progRes.json();
@@ -109,170 +138,197 @@ export async function restore_from_jobId(job_Id) {
     }
 }
 
+export async function generate(brand, langs, model, service, audience, description, brandKeywords, prompts, postParameters, imagePath) {
+    model = "deepseek-v3.1:671b-cloud";
 
-
-export async function generate(brand, langs, model, service, audience, description, brandKeywords, prompts, postParameters) {
-    model = "deepseek-v3.1:671b-cloud"
     const brandDeasciified = deasciifierNLowerer(brand);
-    const processEl = document.getElementById(`${brandDeasciified}onGoingProcess`);  // Grab for updates
+    const processEl = document.getElementById(`${brandDeasciified}onGoingProcess`);
+    const logButton = document.querySelector(`#${brandDeasciified}LogBtn`)
     if (!processEl) {
         console.error(`No process el for ${brandDeasciified}`);
         return;
     }
-    processEl.textContent = 'Starting...';  // Kickoff vibe
 
-    const Inptopic = document.querySelector(`#${brandDeasciified}BaslikInp`).value;
+    const topics = document
+        .querySelector(`#${brandDeasciified}BaslikInp`)
+        .value
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0);
 
-    // Map content boxes for each language
-    const historyBox = document.querySelector(`#${brandDeasciified}History`)
+    if (topics.length === 0) {
+        processEl.textContent = "No topic found";
+        return;
+    }
+
+    processEl.textContent = 'Starting...';
+
+    const historyBox = document.querySelector(`#${brandDeasciified}History`);
     const contentBoxMap = {};
     const metaDescBoxMap = {};
     const metaKwsBoxMap = {};
+
     langs.forEach(lang => {
-        const langDeasciified = deasciifierNLowerer(lang);  // Deasciify lang for ID match
+        const langDeasciified = deasciifierNLowerer(lang);
         const contentBox = document.querySelector(`#${brandDeasciified}${langDeasciified} .contentBox`);
         const metaDescBox = document.querySelector(`#${brandDeasciified}${langDeasciified} .metaDescBox`);
         const metaKwsBox = document.querySelector(`#${brandDeasciified}${langDeasciified} .metaKwBox`);
-        if (contentBox) {
-            contentBoxMap[lang] = contentBox;
-        }
-        if (metaDescBox) {
-            metaDescBoxMap[lang] = metaDescBox;
-        }
-        if (metaKwsBox) {
-            metaKwsBoxMap[lang] = metaKwsBox;
-        }
+
+        if (contentBox) contentBoxMap[lang] = contentBox;
+        if (metaDescBox) metaDescBoxMap[lang] = metaDescBox;
+        if (metaKwsBox) metaKwsBoxMap[lang] = metaKwsBox;
     });
 
-    const res = await fetch("http://localhost:3169/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            brand: brand,
-            topic: Inptopic,
-            services: service,
-            audience: audience,
-            description: description,
-            brandKeywords: brandKeywords,
-            ai_model: model,
-            langs: langs,
-            prompts: prompts
-        })
-    });
+    async function runSingleTopic(topic) {
+        processEl.textContent = `Starting: ${topic}`;
 
-    console.log('Generate fetch done, status:', res.status);
+        const res = await fetch("http://localhost:3270/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                brand: brand,
+                topic: topic,   // artık tek string
+                services: service,
+                audience: audience,
+                description: description,
+                brandKeywords: brandKeywords,
+                ai_model: model,
+                langs: langs,
+                prompts: prompts,
+                image_path: imagePath
+            })
+        });
 
-    if (!res.ok) {
-        const errBody = await res.text();
-        console.error(`API start bombed: ${res.status} ${res.statusText} - Body: ${errBody}`);
-        processEl.textContent = `Start failed: ${res.status} - ${res.statusText}`;
-        return;
-    }
+        console.log('Generate fetch done, status:', res.status);
 
-    const startData = await res.json();
-    console.log('Full startData:', startData);
-    console.log('Job_id extracted:', startData.job_id);
-    const jobId = startData.job_id;
-    if (!jobId) {
-        console.error('No job_id from backend—progress dead.');
-        processEl.textContent = 'No job started—retry?';
-        return;
-    }
-    console.log(`Job kicked: ${jobId}`);
+        if (!res.ok) {
+            const errBody = await res.text();
+            console.error(`API start bombed: ${res.status} ${res.statusText} - Body: ${errBody}`);
+            throw new Error(`Start failed: ${res.status} - ${res.statusText}`);
+        }
 
-    let pollInterval;
+        const startData = await res.json();
+        console.log('Full startData:', startData);
 
+        const jobId = startData.job_id;
+        if (!jobId) {
+            throw new Error('No job_id from backend');
+        }
 
-    async function pollProgress() {
-        console.log('Poll attempt starting for:', jobId);  // Does this fire?
-        try {
-            const progRes = await fetch(`http://localhost:3169/progress/${jobId}`);
-            console.log('Progress fetch status:', progRes.status);  // 200 or bust?
-            if (!progRes.ok) throw new Error(`Progress fetch: ${progRes.status}`);
-            const progData = await progRes.json();
-            console.log('Progress data:', progData);  // Full guts
+        console.log(`Job kicked: ${jobId}`);
 
-            processEl.textContent = `${progData.step || 0}: ${progData.message}`;
-            processEl.style.color = progData.status === 'done' ? 'green' : progData.status === 'error' ? 'red' : 'orange';
+        return await new Promise((resolve, reject) => {
+            let pollInterval;
 
-            if (progData.status === 'done' && progData.data) {
-                clearInterval(pollInterval);
-                processEl.textContent = 'Done';
-                // Populate from final data
-                const data = progData.data;
-                let contents = data.contents;
-                let metaDescs = data.metaDescs;
-                let metaKwords = data.metaKeywords;
-                let subTitles = data.subtitles;
+            async function pollProgress() {
+                console.log('Poll attempt starting for:', jobId);
 
-                Object.keys(contents || {}).forEach(langsContent => {
-                    if (contentBoxMap[langsContent]) {
-                        contentBoxMap[langsContent].textContent = contents[langsContent];
+                try {
+                    const progRes = await fetch(`http://localhost:3270/progress/${jobId}`);
+                    console.log('Progress fetch status:', progRes.status);
+
+                    if (!progRes.ok) throw new Error(`Progress fetch: ${progRes.status}`);
+
+                    const progData = await progRes.json();
+                    console.log('Progress data:', progData);
+
+                    processEl.textContent = `${progData.step || 0}: ${progData.message}`;
+                    processEl.style.color =
+                        progData.status === 'done' ? 'green' :
+                        progData.status === 'error' ? 'red' : 'orange';
+
+                    if (progData.status === 'done' && progData.data) {
+                        clearInterval(pollInterval);
+                        processEl.textContent = `Done: ${topic}`;
+
+                        const data = progData.data;
+                        const contents = data.contents || {};
+                        const metaDescs = data.metaDescs || {};
+                        const metaKwords = data.metaKeywords || {};
+                        const subTitles = data.subtitles || {};
+
+                        Object.keys(contents).forEach(langKey => {
+                            if (contentBoxMap[langKey]) {
+                                contentBoxMap[langKey].textContent = contents[langKey];
+                            }
+                        });
+
+                        Object.keys(metaDescs).forEach(langKey => {
+                            if (metaDescBoxMap[langKey]) {
+                                metaDescBoxMap[langKey].textContent = metaDescs[langKey];
+                            }
+                        });
+
+                        Object.keys(metaKwords).forEach(langKey => {
+                            if (metaKwsBoxMap[langKey]) {
+                                // metaKwsBoxMap[langKey].textContent = metaKwords[langKey];
+
+                                let splittedKeywords = metaKwords[langKey].split(',').slice(0,5);
+
+                                metaKwsBoxMap[langKey].textContent = splittedKeywords.join(", ");
+
+                            }
+                        });
+
+                        let historyLangs = ``;
+                        (data.langs || []).forEach(element => {
+                            historyLangs += `
+                                <h3>${data.topics?.[element] || topic}</h3>
+                                <h4>${element}</h4>
+                                <label>Content: </label>
+                                <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${contents[element] || ''}</textarea><br/>
+                                <label>MetaDesc: </label>
+                                <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${metaDescs[element] || ''}</textarea><br/>
+                                <label>Keywords :</label>
+                                <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${metaKwords[element] || ''}</textarea><br/>
+                            `;
+                        });
+
+                        let historyHTML = `
+                            <div class="historyElement">
+                                <label>Be careful with article ID you might wipe off another article keep it 0 unless you know what you are doing:&nbsp;&nbsp;</label>
+                                <input class="articleId" type="number" value="0" disabled><br/>
+                                <button id="${brandDeasciified}upload">Add to panel</button><br/>
+                                <label>${jobId}</label><br/>
+                                <div>${historyLangs}</div>
+                            </div>
+                        `;
+
+                        historyBox.insertAdjacentHTML('beforeend', historyHTML);
+                        historyBox.querySelectorAll('.historyElement textarea').forEach(textarea => updateLabel(textarea));
+
+                        resolve(progData.data);
+                    } else if (progData.status === 'error') {
+                        clearInterval(pollInterval);
+                        processEl.textContent = `Error: ${progData.message}`;
+                        reject(new Error(progData.message || 'Generation failed'));
                     }
-                });
-
-                Object.keys(metaDescs || {}).forEach(langsDesc => {
-                    if (metaDescBoxMap[langsDesc]) {
-                        metaDescBoxMap[langsDesc].textContent = metaDescs[langsDesc];
-                    }
-                });
-
-                Object.keys(metaKwords || {}).forEach(langsKws => {
-                    if (metaKwsBoxMap[langsKws]) {
-                        metaKwsBoxMap[langsKws].textContent = metaKwords[langsKws];
-                    }
-                });
-
-                let historyLangs = ``;
-                data.langs.forEach(element => {
-                    historyLangs += `
-                        <h3>${data.topics[element]}</h3>
-                        <h4>${element}</h4>
-                        <label>Content: </label>
-                        <textarea onload="updateLabel(this)" oninput="updateLabel(this)">${contents[element]}</textarea><br/>
-                        <label>MetaDesc: </label>
-                        <textarea onload="updateLabel(this)"  oninput="updateLabel(this)">${metaDescs[element]}</textarea><br/>
-                        <label>Keywords :</label>
-                        <textarea onload="updateLabel(this)"  oninput="updateLabel(this)">${metaKwords[element]}</textarea><br/>
-                    `
-                })
-
-                let historyHTML = `
-                    <div class="historyElement">
-                        <label>Be careful with article ID you might wipe off another article keep it 0 unless you know what you are doing:&nbsp;&nbsp;</label>
-                        <input class="articleId" type="number" value="0" disabled><br/>
-                        <button id="${brandDeasciified}upload">Add to panel</button><br/>
-                        <label>${jobId}</label><br/>
-                        <div>${historyLangs}</div>
-                    </div>
-                `
-
-                // historyHTML = historyHTML.replace('<div class="historyElement">', `<div class="historyElement" data-post-params='${JSON.stringify(postParameters)}'>`);
-                historyBox.insertAdjacentHTML('beforeend', historyHTML)
-
-                historyBox.querySelectorAll('.historyElement textarea').forEach(textarea => updateLabel(textarea));
-
-
-                // console.log('Subtitles:', subTitles); 
-
-                // playSound()
-
-            } else if (progData.status === 'error') {
-                clearInterval(pollInterval);
-                processEl.textContent = `Error: ${progData.message}`;
-
-                // playSound()
+                } catch (err) {
+                    clearInterval(pollInterval);
+                    console.error('Poll bombed:', err);
+                    processEl.textContent = 'Poll connection issue—retry?';
+                    reject(err);
+                }
             }
-        } catch (err) {
-            console.error('Poll bombed:', err);
-            clearInterval(pollInterval);
-            processEl.textContent = 'Poll connection issue—retry?';
-        }
-    };
 
-    console.log('Interval armed, first poll kicking now');
-    pollInterval = setInterval(pollProgress, 1000);
-    pollProgress();
+            console.log('Interval armed, first poll kicking now');
+            pollInterval = setInterval(pollProgress, 1000);
+            pollProgress();
+        });
+    }
+
+    for (const topic of topics) {
+        try {
+            await runSingleTopic(topic);
+        } catch (err) {
+            console.error(`Topic failed: ${topic}`, err);
+            break; // burada continue yaparsan sonraki topic'e geçer
+        }
+    }
+
+    processEl.textContent = "All topics finished";
+    logButton.click()
+
 }
 
 
@@ -348,6 +404,10 @@ export async function handleUpload(brandDeasciified, historyEl, button, postPara
 
         let titles = {};
 
+        let article_id = historyEl.querySelector('.articleId').value;
+
+        postParameters['id_article'] = article_id
+
         langSections.forEach(e => {
             let langsTitle = e.previousElementSibling.textContent
             titles[langMap[e.textContent.toLowerCase()]] = langsTitle
@@ -398,7 +458,7 @@ export async function handleUpload(brandDeasciified, historyEl, button, postPara
 
         console.log('Full payload pre-send:', payload);
 
-        const uploadRes = await fetch('/upload', {  // Or full localhost:3169 if cross-origin
+        const uploadRes = await fetch('/upload', {  // Or full localhost:3270 if cross-origin
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(cleanedPayload)
@@ -447,7 +507,7 @@ export async function loginToPanel(brand, url) {
     loginBtn.textContent = 'Logging in...';
 
     try {
-        const loginRes = await fetch("http://localhost:3169/login_to_panel", {
+        const loginRes = await fetch("http://localhost:3270/login_to_panel", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -474,7 +534,7 @@ export async function loginToPanel(brand, url) {
         }
     } catch (err) {
         console.error(`Network/login bomb for ${brand}:`, err);
-        alert('Connection issue—check localhost:3169?');
+        alert('Connection issue—check localhost:3270?');
         return { success: false, error: err.message };
     } finally {
         loginBtn.disabled = false;
