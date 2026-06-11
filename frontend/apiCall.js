@@ -263,7 +263,7 @@ export async function generate(brand, langs, model, service, audience, descripti
                             if (metaKwsBoxMap[langKey]) {
                                 // metaKwsBoxMap[langKey].textContent = metaKwords[langKey];
 
-                                let splittedKeywords = metaKwords[langKey].split(',').slice(0,5);
+                                let splittedKeywords = metaKwords[langKey].split(',').slice(0,7);
 
                                 metaKwsBoxMap[langKey].textContent = splittedKeywords.join(", ");
 
@@ -272,7 +272,7 @@ export async function generate(brand, langs, model, service, audience, descripti
 
                         let historyLangs = ``;
                         (data.langs || []).forEach(element => {
-                            let splittedKeywords = metaKwords[element].split(',').slice(0,5);
+                            let splittedKeywords = metaKwords[element].split(',').slice(0,7);
 
                             let metaKwordsForHistoty = splittedKeywords.join(", ");
                             historyLangs += `

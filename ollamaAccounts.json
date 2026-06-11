@@ -1,20 +1,20 @@
 {
-    "account1": {
-        "mail": "testst@gmail.com",
+    "marda1234": {
+        "mail": "mardadurak1234@gmail.com",
         "pass": "testest1",
-        "api": "key",
-        "last_used": 1
-    },
-    "account2": {
-        "mail": "testestst@gmail.com",
-        "pass": "testest1",
-        "api": "key",
+        "api": "827e2a4ab0fb4308ac1861f71878e7c6.40_2OvmzaX2hFhwgjzUTj2eN",
         "last_used": 2
     },
-    "account3": {
-        "mail": "testests@gmail.com",
+    "vayesdp8": {
+        "mail": "vayesdp8@gmail.com",
         "pass": "testest1",
-        "api": "key",
+        "api": "d27f1b07272c4440ab646fa42df67b8f.wph2e-h0uI0U46O7v1aX53hz",
         "last_used": 0
+    },
+    "marda123": {
+        "mail": "mardadurak123@gmail.com",
+        "pass": "testest1",
+        "api": "e66643d37081417db62689c840d92591.Vjzkm3aQ6PkurvtiuqHOyye4",
+        "last_used": 1
     }
 }

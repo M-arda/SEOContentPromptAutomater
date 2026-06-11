@@ -25,7 +25,7 @@ CONFIG = {"installed_models": ["derin","gpt","qwen"]}
 
 MODELS = {
     # "derin":"deepseek-v3.1:671b-cloud",
-    "derin":"cogito-2.1:671b-cloud",
+    "derin":"minimax-m3:cloud",
     "gpt":"gpt-oss:120b-cloud",
     "qwen":"qwen3-vl:235b-cloud"
 }
@@ -792,7 +792,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "backend:app",
         host="127.0.0.1",
-        port=3270,
-        workers=4
+        port=3270
     )
 
