@@ -48,21 +48,25 @@ def process_lines(multiline_text) -> dict:
 
 # Dosyadaki değil paneldeki başlıkları kullan
 
+def main():
 
-basliklar = """
-İhracat Yapan Markalar İçin GEO
-Perplexity Optimizasyonu
-B2B SaaS için GEO
-Sağlık ve Estetik Klinikleri için GEO
-ChatGPT Optimizasyonu
-Claude Optimizasyonu
-E-ticaret için GEO
-Gemini Optimizasyonu
-"""
+    basliklar = """
+    İhracat Yapan Markalar İçin GEO
+    Perplexity Optimizasyonu
+    B2B SaaS için GEO
+    Sağlık ve Estetik Klinikleri için GEO
+    ChatGPT Optimizasyonu
+    Claude Optimizasyonu
+    E-ticaret için GEO
+    Gemini Optimizasyonu
+    """
 
-baslikListe = [line.strip() for line in basliklar.strip().splitlines() if line.strip()]
+    baslikListe = [line.strip() for line in basliklar.strip().splitlines() if line.strip()]
 
-with open("slugified.txt","a",encoding='utf-8') as f:
-    f.write("\n")
-    for baslik in baslikListe:
-        f.write(f"\n{slugify_line(baslik)}")
+    with open("slugified.txt","a",encoding='utf-8') as f:
+        f.write("\n")
+        for baslik in baslikListe:
+            f.write(f"\n{slugify_line(baslik)}")
+
+if __name__ == "__main__":
+    main()
